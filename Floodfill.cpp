@@ -90,7 +90,7 @@ void delete_Node (Node **npp) {
 	*npp = 0;		//set node pointers to null
 }
 
-//Maze constructor
+//Maze destructor
 void delete_Maze(Maze *mpp) {
 	//debug statements?
 	if(debug_on)
@@ -105,8 +105,71 @@ void delete_Maze(Maze *mpp) {
 	*mpp = 0;	//set maze ptr to null
 }
 
+/*** Maze Functions ***/
+/* 
+Function: print_maze(const Maze *this_maze)
+Description: Prints out the maze and the flood values of each cell
+in the maze
+
+Input: Maze *this_maze - a const maze pointer that you use to access
+all the flood values of the nodes.
+Output: none
+*/
+void print_maze(const Maze *this_maze) {
+	short x, y;
+
+	printf("\n%s\n\n", "Current Map Values: ");
+
+	//prints out the flood values of each cell in the maze
+	for (x = 0; x < SIZE; ++x) {
+		for (y = 0; y < SIZE; ++y) {
+			printf("%s%3hd", " ", this_maze->map[x][y]->floodval);
+		}
+		printf("\n\n");
+	}
+
+	printf("\n");
+}
+
 /*** Node Functions ***/
 
+/* function for obtaining this_node's smallest neighbor's floodval */
+short get_smallest_neighbor (Node * this_node) {
+
+	/* debug statements */
+	if (debug_on)
+		printf("In get_smallest_neighbor\n");
+
+	//the Node's floodval will be 1 higher than neighboring cell
+	short smallestneighbor = LARGEVAL
+
+	//check if left is available and left's right pointer is available 
+	if(this_node->left != NULL && (this_node->left->right != NULL) 
+		&& (this_node->left->floodval) < smallestneighbor)
+		smallestneighbor = this_node->left->floodval;
+
+}
+
+/* Function for setting this node's floodval to a specific value */
+void set_value (Node * this_node, const short value) {
+
+	/* debug statements */
+	if (debug_on) {
+		printf("In set_value\n");
+		printf("Floodval set to : %d\n", this_node->floodval);
+	}
+	
+	/* set the flood value to specified value */
+	this_node->floodval = value;
+}
+
+void set_visited(Node *this_node) {
+	if(debug_on)
+		printf("Node at %d %d set_visited\n", this_node->row, this_node->column);
+
+	//set visited flag flood value to specified value
+	VISITED = TRUE;
+}
 
 
 

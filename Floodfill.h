@@ -5,7 +5,7 @@
  *      Author: Adam Li / adam2392
 
 Q:
-
+1. why is largeval 301?
  */
 
 
@@ -21,6 +21,8 @@ Q:
 #endif
 
 #define SIZE 16	//the size of one dimension of Map
+#define LARGEVAL 301
+
 
 //define directions
 #define NORTH 0
@@ -59,19 +61,21 @@ typedef struct Maze {
 } Maze;
 
 typedef struct Stack {
-	short properties [STACK_OFFSET]; //creates a short array of size stack_offset
-	Node *the_stack [STACKSIZE];	//creates a Node pointer array of size stacksize
+	short properties[STACK_OFFSET]; //creates a short array of size stack_offset
+	Node *the_stack[STACKSIZE];	//creates a Node pointer array of size stacksize
 } Stack;
 
 //Node functions
 Node *new Node(const short x, const short y);
 void delete_Node(Node **npp);
 void flood_fill(Node *this_node, Stack *this_stack, const short reflood_flag);
+void set_value(Node *this_node, const short value);
+short get_smallest_neighbor(Node *this_node);
 
 //Maze functions
 Maze *new_Maze();
 void delete_Maze(Maze **mpp);
-void print_map(const Maze *this_maze);
+void print_maze(const Maze *this_maze);
 
 //Stack functions
 Stack *new_Stack();
