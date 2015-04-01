@@ -5,6 +5,7 @@
  *      Author: Adam Li / adam2392
 
 Q:
+1. get_smallestneighbor: if vs. else if
 
  */
 
@@ -147,7 +148,21 @@ short get_smallest_neighbor (Node * this_node) {
 	if(this_node->left != NULL && (this_node->left->right != NULL) 
 		&& (this_node->left->floodval) < smallestneighbor)
 		smallestneighbor = this_node->left->floodval;
+	//check right
+	else if(this_node->right != NULL && (this_node->right->left != NULL) 
+		&& (this_node->right->floodval) < smallestneighbor)
+		smallestneighbor = this_node->right->floodval;
+	//check down
+	else if(this_node->down != NULL && (this_node->down->up != NULL) 
+		&& (this_node->down->floodval) < smallestneighbor)
+		smallestneighbor = this_node->down->floodval;
+	//check up
+	else if(this_node->up != NULL && (this_node->up->down != NULL) 
+		&& (this_node->up->floodval) < smallestneighbor)
+		smallestneighbor = this_node->up->floodval;
 
+
+	return smallestneighbor;
 }
 
 /* Function for setting this node's floodval to a specific value */
