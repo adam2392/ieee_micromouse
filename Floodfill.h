@@ -21,8 +21,6 @@ Q:
 #endif
 
 #define SIZE 16	//the size of one dimension of Map
-#define LARGEVAL 301
-
 
 //define directions
 #define NORTH 0
@@ -35,6 +33,32 @@ Q:
 #define SSI 0	//stack size index (points to size)
 #define STACK_OFFSET 2
 #define STACKSIZE 80	//defines the size of the stack
+
+// Solver Constants used on mouse
+#define LARGEVAL 301
+#define START_X 15
+#define START_Y 0
+
+// Solver Constants - for command line simulation only
+#define NEWLINE 13
+#define YES 'y'
+#define NO 'n'
+
+/* Main template constants */
+#define ONECELL 61
+#define LEFT_WALL_SENSED 1700
+#define FRONT_WALL_SENSED 2200
+#define RIGHT_WALL_SENSED 1700
+#define LEFT_BASE_SPEED 23000
+#define RIGHT_BASE_SPEED 23000
+#define P_VAL 7
+#define D_VAL 0
+#define TURN_LEFT_COUNT 17
+#define TURN_RIGHT_COUNT 18
+#define ABOUT_FACE_COUNT 39
+#define CENTER 2000
+#define LEFT_TWO_AWAY 570
+#define RIGHT_TWO_AWAY 630
 
 /* 
 Defines the node for the floodfill algorithm to fill up
@@ -87,5 +111,6 @@ void push(Stack *this_stack, Node *this_node);
 //Debug function setters
 void debug_on();
 void debug_off();
+int get_debug_mode();
 
 #endif /* Floodfill_H_ */
