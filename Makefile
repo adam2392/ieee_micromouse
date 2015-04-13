@@ -18,4 +18,7 @@ clean:
 new: 
 	make clean
 	make
+<<<<<<< HEAD
 
+=======
+>>>>>>> 65a7c1f6b6fea9d8d59ffef920ee91d5fed03ef8
