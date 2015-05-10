@@ -55,13 +55,13 @@ int ran = 0;
 // TODO: find the correct values for these variables by 
 // placing the mouse int he the middle of a maze path
 // and measuring the sensor readings 
-int hasLeftWall = 100; 
-int hasRightWall = 100; 
+int hasLeftWall = 60; 
+int hasRightWall = 60; 
 
 int errorP = 0;
 int errorD = 0; 
 int oldErrorP = 0; 
-int newOffset = 40; 
+int newOffset = 00; 
 int rightBaseSpeed = 15; 
 int leftBaseSpeed = 25;
 
@@ -80,6 +80,20 @@ int D = 0;
 volatile int R_encoder_val = 0;  // declare encoder interrupt values
 volatile int L_encoder_val = 0;
 
+
+const int numReadings = 500;
+
+int readings[numReadings];      // the readings from the analog input
+int smoothingIndex = 0;                  // the index of the current reading
+int total = 0;                  // the running total
+int average = 0;                // the average
+
+int inputPin = A0;
+
+int leftSensor = 0; 
+int rightSensor = 0; 
+int LFSensor = 0; 
+int RFSensor =0; 
 // the setup routine runs once when you press reset:
 void setup()
 {
@@ -127,6 +141,9 @@ void setup()
   //setup the speaker pin
   pinMode(speakerPin, OUTPUT);
   ran = 0; 
+  
+  for (int thisReading = 0; thisReading < numReadings; thisReading++)
+    readings[thisReading] = 0;
   //rightForward(0); 
   //leftForward(0); 
 }
@@ -167,14 +184,105 @@ void loop()
    Serial.println(R_encoder_val); 
    Serial.println(" "); 
   */
-  move_single_cell(); 
+  //writeEmitters(); 
+  //readSensors(); 
+  //move_single_cell(); 
   //about_face(); 
-  //turn_left(); 
-  delay(1000); 
+  //turn_left();
+  //writeSides();  
+  //readDistance();
+  //rightForward( rightBaseSpeed ) ; 
+  //leftForward( leftBaseSpeed );  
+  readSensor(); 
+  printSensors(); 
+  delay(100); 
   
+  
+  /*
+  
+  // subtract the last reading:
+  total= total - readings[smoothingIndex];         
+  // read from the sensor:  
+  readings[smoothingIndex] = readLeft(); ; 
+  // add the reading to the total:
+  total= total + readings[smoothingIndex];       
+  // advance to the next position in the array:  
+  smoothingIndex =smoothingIndex + 1;                    
+
+  // if we're at the end of the array...
+  if (smoothingIndex >= numReadings)              
+    // ...wrap around to the beginning: 
+    smoothingIndex = 0;                           
+
+  // calculate the average:
+  average = total / numReadings;         
+  // send it to the computer as ASCII digits
+  Serial.println(average);   
+  delay(5);        // delay in between reads for stability 
+  */
 }
 
+void readSensor(void) {
 
+int curt = micros();//record the current time
+
+writeLeftFront();//this is not sudo code, this is macro I defined somewhere else
+
+while((micros()-curt)<60);//use up time until 60us from where we record curt
+
+LFSensor =readLeftFront(); 
+
+stopLeftFront();//turn off emitter right after receive   r done ADC converting
+
+//do linear regression here for left front sensor if you plan to linearize your sensor
+
+while((micros()-curt)<140);//140-60=80us,wait 80us until reflection is gone
+
+writeRightFront();
+
+while((micros()-curt)<200);//200-140=60us, turn on emitter for 60us
+
+RFSensor=readRightFront();
+
+stopRightFront(); 
+
+//do linear regression here for right front sensor if you plan to linearize your sensor
+
+while((micros()-curt)<280);//280-200=80us
+
+writeSides();//turn on side emitters for side sensors
+
+while((micros()-curt)<340);//340-280=60us
+
+leftSensor  = readLeft(); 
+
+rightSensor = readRight(); 
+
+stopSides(); 
+
+//do linear regression here for side sensors if you plan to linearize your sensors
+
+}
+
+void printSensors(){
+  Serial.print("Time: "); 
+  Serial.println(micros());
+  Serial.print("IR left diag: ");
+  Serial.println(leftSensor);
+  Serial.print("IR right diag: "); 
+  Serial.println(rightSensor); 
+  Serial.print("IR left front: ");
+  Serial.println(LFSensor);
+  Serial.print("IR right front: "); 
+  Serial.println(RFSensor);
+}
+void readDistance(){
+ Serial.print("Right encoder: "); 
+ Serial.println(R_encoder_val); 
+ Serial.print("Left encoder: "); 
+ Serial.println(L_encoder_val);  
+  
+}
 void left_interrupt()
 {
   
@@ -211,17 +319,17 @@ int readLeft(){
 int readRight(){
   return analogRead(R_Receiver);
 }
-int readLeft_Front(){
+int readLeftFront(){
   return analogRead(LF_Receiver);
 }
-int readRight_Front(){
+int readRightFront(){
   return analogRead(RF_Receiver);
 }
 // WRITE SENSORS
 void writeSides(){
   digitalWrite(SIDE_HIGH_POWER, HIGH);
 }
-void writeLeftDiag(){
+void writeSidesLow(){
   digitalWrite(SIDE_LOW_POWER, HIGH);
 }
 void writeLeftFront(){
@@ -230,7 +338,16 @@ void writeLeftFront(){
 void writeRightFront(){
   digitalWrite(RF_Emitter, HIGH);
 }
-
+void stopLeftFront(){
+  digitalWrite(LF_Emitter, LOW);  
+}
+void stopRightFront(){
+  
+  digitalWrite(RF_Emitter, LOW );  
+}
+void stopSides(){
+  digitalWrite(SIDE_HIGH_POWER, LOW );  
+}
 // DRIVING Functions for left and right motor ***** Probably needs testing to set pwmvalue
 //turn left motor on or off
 void leftForward(int pwmvalue){
@@ -252,6 +369,26 @@ void rightBackward(int pwmvalue){
   analogWrite(R_bkw, pwmvalue);  
 }
  
+void writeEmitters(){
+  
+  writeSides(); 
+  writeLeftFront(); 
+  writeRightFront(); 
+  
+}
+
+void readSensors(){
+  Serial.print("Time: "); 
+  Serial.println(time++);
+  Serial.print("IR left diag: ");
+  Serial.println(readLeft());
+  Serial.print("IR right diag: "); 
+  Serial.println(readRight()); 
+  Serial.print("IR left front: ");
+  Serial.println(readLeftFront());
+  Serial.print("IR right front: "); 
+  Serial.println(readRightFront());
+}
 void readEnc(){
   
    //rightenc = analogRead(RenchA); 
@@ -405,8 +542,8 @@ void drive_test(){
 void pid( void ) {
  
   int totalError; 
-  int rightSensor = readRight(); 
-  int leftSensor = readLeft(); 
+  rightSensor = readRight(); 
+  leftSensor = readLeft(); 
   if( leftSensor > hasLeftWall && rightSensor > hasRightWall ) {
     errorP = rightSensor - leftSensor - newOffset;  
     errorD = errorP - oldErrorP;  
@@ -421,8 +558,15 @@ void pid( void ) {
   }
   totalError = P * errorP + D * errorD; 
   oldErrorP = errorP; 
-  rightForward( rightBaseSpeed + totalError ); 
-  leftForward(leftBaseSpeed - totalError ); 
+  
+  int rightSpeed = rightBaseSpeed + totalError; 
+  int leftSpeed = leftBaseSpeed - totalError; 
+  if( rightSpeed > 50 || rightSpeed < -50 ) 
+    rightSpeed = 0; 
+  if( leftSpeed > 50 || leftSpeed < -50 )
+    leftSpeed = 0; 
+  rightForward( rightSpeed ); 
+  leftForward(leftSpeed ); 
   
   
 }
