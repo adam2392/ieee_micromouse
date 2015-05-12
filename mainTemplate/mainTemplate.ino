@@ -48,29 +48,29 @@ const int L_fwd = 4, L_bkw = 3;  //L_fwd = 1 and L_bkw = 0 -> go forward on left
 //Speaker
 #define speakerPin 2
 
-#define ABOUT_FACE_COUNT 5000
+#define ABOUT_FACE_COUNT 3600
 
-#define TURN_RIGHT_COUNT 2500
-#define TURN_LEFT_COUNT 2500
+#define TURN_RIGHT_COUNT 1900
+#define TURN_LEFT_COUNT 1900
 
-#define ONECELL 8500
+#define ONECELL 6000
 
 int ran = 0; 
 // TODO: find the correct values for these variables by 
 // placing the mouse int he the middle of a maze path
 // and measuring the sensor readings 
-int hasLeftWall = 60; 
-int hasRightWall = 60; 
+int hasLeftWall = 50; 
+int hasRightWall = 50; 
 
 int errorP = 0;
 int errorD = 0; 
 int oldErrorP = 0; 
-int newOffset = 00; 
-int rightBaseSpeed = 15; 
-int leftBaseSpeed = 25;
+int newOffset = -80; 
+int rightBaseSpeed = 35; 
+int leftBaseSpeed = 31;
 
-int P = 0.85; 
-int D = 0; 
+int P = 0.25; 
+int D = 0.3; 
 
 int rightenca = 0; 
 int rightencb = 0; 
@@ -81,6 +81,8 @@ int n = 0;
 int m = 0; 
 boolean keep_moving; 
 
+int leftSense = 0; 
+int rightSense = 0; 
 volatile int R_encoder_val = 0;  // declare encoder interrupt values
 volatile int L_encoder_val = 0;
 
@@ -178,54 +180,26 @@ void setup()
 // the loop routine runs over and over again forever:
 void loop()
 {
-  //writeSides();  //turn on side emitters to receive distance signal
-
-
-  //drive_straight_PID();
-  //leftForward(30); 
-  //rightForward(30); 
-  //leftBackward(30);
-  //rightBackward(30); 
-  //Serial.print("IR left diag: ");
-  //Serial.println(readLeft());
-  //Serial.print("IR right diag: "); 
-  //Serial.println(readRight()); 
-  //drive_test(); 
-  //drive_straight_PID(); 
-  //readEnc(); 
-  //about_face(); 
-  //Serial.println("Running");
-
-
-  /*
-  rightForward(0); 
-   leftForward(0); 
-   Serial.print("Time: "); 
-   Serial.println(time++);
-   Serial.print("Left Encoder: "); 
-   Serial.println(L_encoder_val);
-   Serial.println(" "); 
-   
-   Serial.print("Right Encoder: "); 
-   Serial.println(R_encoder_val); 
-   Serial.println(" "); 
-   */
-  //writeEmitters(); 
-  //readSensors(); 
-  //move_single_cell(); 
-  //about_face(); 
-  //turn_left();
-  //writeSides();  
-  //readDistance();
-  //rightForward( rightBaseSpeed ) ; 
-  //leftForward( leftBaseSpeed );  
-  readSensor(); 
-  printSensors(); 
-  delay(100); 
-
-
-  /*
   
+  
+  
+  readSensor(); 
+  //printSensors(); 
+  Serial.print("move once-----------------");
+ // move_single_cell(); 
+  pid();
+  delay(10);
+  //turn_right(); 
+  //delay(1000); 
+  //about_face(); 
+  //turn_left(); 
+  //delay(1000); 
+  //turn_right(); 
+  //delay(1000); 
+
+
+  /*
+   
    // subtract the last reading:
    total= total - readings[smoothingIndex];         
    // read from the sensor:  
@@ -247,9 +221,10 @@ void loop()
    delay(5);        // delay in between reads for stability 
    */
 
-  /* trip from goal to end */
+/*
+  //* trip from start to goal 
   while(!found_dest){
-
+    readSensor(); 
     visit_node(my_maze, my_stack, x, y, FALSE);
     change_dir(my_maze, &x, &y, &direction); //find the best direction to face based on flood values and turn to that direction
     move_single_cell(); //move one cell in the new direction
@@ -269,16 +244,16 @@ void loop()
   found_dest = FALSE;
   about_face();
   
-  /* trip from GOAL to START */
+  ///* trip from GOAL to START 
   while(!found_dest){
-    
+    readSensor(); 
     visit_node(my_maze,my_stack,x,y,TRUE);
     change_dir(my_maze,&x,&y,&direction);
     move_single_cell();
     check_start_reached(&x,&y,&found_dest);
   }
 
-
+*/
 }
 
 void readSensor(void) {
@@ -582,27 +557,32 @@ void turn_right()  // point turn
 
 void move_single_cell() {
 
-  analogWrite(R_fwd, LOW);
-  analogWrite(L_fwd, LOW);
-  analogWrite(R_bkw, LOW);
-  analogWrite(L_bkw, LOW );
+  //analogWrite(R_fwd, LOW);
+  //analogWrite(L_fwd, LOW);
+  //analogWrite(R_bkw, LOW);
+  //analogWrite(L_bkw, LOW );
+  L_encoder_val = 0;
   keep_moving = true;
-  do {
-
-    rightForward(70); 
-    leftForward(70); 
-    if (L_encoder_val >= ONECELL) {
+  while(keep_moving){
+    //Serial.println("move one working"); 
+    //Serial.println(L_encoder_val); 
+    //rightForward(70); 
+    //leftForward(70);
+    readSensor();
+    pid();  
+    if (L_encoder_val >= ONECELL)  {
 
       keep_moving = false;
       R_encoder_val = 0;
       L_encoder_val = 0;
-      analogWrite(R_fwd, HIGH);
-      analogWrite(L_fwd, HIGH);
-      analogWrite(R_bkw, HIGH);
-      analogWrite(L_bkw, HIGH);
+      
+      analogWrite(R_fwd, LOW);
+      analogWrite(L_fwd, LOW);
+      analogWrite(R_bkw, LOW);
+      analogWrite(L_bkw, LOW);
+      //Serial.println("one cell moved. should stop now");
     }
   } 
-  while(keep_moving);
 
 
 }
@@ -623,35 +603,60 @@ void drive_test(){
 
 
 void pid( void ) {
-
+ 
+  readSensor(); 
   int totalError; 
-  rightSensor = readRight(); 
-  leftSensor = readLeft(); 
-  if( leftSensor > hasLeftWall && rightSensor > hasRightWall ) {
-    errorP = rightSensor - leftSensor - newOffset;  
+  rightSense = rightSensor; 
+  leftSense = leftSensor; 
+  if( leftSense > hasLeftWall && rightSense > hasRightWall ) {
+    //Serial.println("in the middle"); 
+    errorP = rightSense - leftSense - newOffset;  
     errorD = errorP - oldErrorP;  
   } 
-  else if( leftSensor > hasLeftWall ){
-    errorP = 2 * ( hasLeftWall - leftSensor ); 
+  else if( leftSense > hasLeftWall ){
+    //Serial.println("only left wall"); 
+    errorP = .1 * ( 80 - leftSense ); 
     errorD = errorP - oldErrorP; 
   }
-  else if( rightSensor > hasRightWall ){
-    errorP = 2 * (rightSensor - hasRightWall ); 
+  else if( rightSense > hasRightWall ){
+   // Serial.println("only right wall"); 
+    errorP = .1 * (rightSense - 80 ); 
     errorD = errorP - oldErrorP;  
   }
+  //Serial.print("Error P : "); 
+  //Serial.println(errorP); 
+  
   totalError = P * errorP + D * errorD; 
   oldErrorP = errorP; 
-
+  //Serial.print("P: "); 
+  //Serial.println(P); 
+  //Serial.print("Total Error: ");
+  //Serial.println(totalError); 
   int rightSpeed = rightBaseSpeed + totalError; 
   int leftSpeed = leftBaseSpeed - totalError; 
-  if( rightSpeed > 50 || rightSpeed < -50 ) 
-    rightSpeed = 0; 
+  
+  
+  if( rightSpeed > 50 || rightSpeed < -50 )
+    rightSpeed = rightSpeed/2 -5 ; 
   if( leftSpeed > 50 || leftSpeed < -50 )
-    leftSpeed = 0; 
+    leftSpeed = leftSpeed/2 - 5 ; 
+  
+  if(RFSensor > 500 || LFSensor > 500 ){
+    
+    rightSpeed = 0; 
+    leftSpeed = 0;  
+  }
+  /*
+  Serial.print("Right speed: "); 
+  Serial.println(rightSpeed); 
+  Serial.print("Left speed: "); 
+  Serial.println(leftSpeed); 
+  */
   rightForward( rightSpeed ); 
   leftForward(leftSpeed ); 
-
-
+  //Serial.println("working"); 
+  
+  
 }
 
 /**** PID TEST ****/
@@ -697,14 +702,14 @@ void drive_straight_PID(void){
     total = 0; 
   if(total<-50)
     total=0;
-  Serial.print("total error: "); 
-  Serial.println(total); 
+  //Serial.print("total error: "); 
+  //Serial.println(total); 
   rightForward(15+total); 
   leftForward(25-total); 
 
   if( error == 0 ){
-    Serial.print(" Mouse is straight: ");
-    Serial.println(error);
+    //Serial.print(" Mouse is straight: ");
+    //Serial.println(error);
 
   }
   if( error > 0 ){
