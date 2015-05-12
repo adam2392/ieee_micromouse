@@ -54,7 +54,7 @@ const int L_fwd = 4, L_bkw = 3;  //L_fwd = 1 and L_bkw = 0 -> go forward on left
 #define TURN_RIGHT_COUNT 2500
 #define TURN_LEFT_COUNT 2500
 
-#define ONECELL 8500
+#define ONECELL 6000
 
 int ran = 0; 
 // TODO: find the correct values for these variables by 
@@ -182,52 +182,16 @@ void loop()
 {
   //writeSides();  //turn on side emitters to receive distance signal
 
-
-  //drive_straight_PID();
-  //leftForward(30); 
-  //rightForward(30); 
-  //leftBackward(30);
-  //rightBackward(30); 
-  //Serial.print("IR left diag: ");
-  //Serial.println(readLeft());
-  //Serial.print("IR right diag: "); 
-  //Serial.println(readRight()); 
-  //drive_test(); 
-  //drive_straight_PID(); 
-  //readEnc(); 
-  //about_face(); 
-  //Serial.println("Running");
   
-   
-  /*
-  rightForward(0); 
-  leftForward(0); 
-   Serial.print("Time: "); 
-   Serial.println(time++);
-   Serial.print("Left Encoder: "); 
-   Serial.println(L_encoder_val);
-   Serial.println(" "); 
-  
-   Serial.print("Right Encoder: "); 
-   Serial.println(R_encoder_val); 
-   Serial.println(" "); 
-  */
-  //writeEmitters(); 
-  //readSensors(); 
-  //move_single_cell(); 
-  //about_face(); 
-  //turn_left();
-  //writeSides();  
-  //readDistance();
-  //rightForward( rightBaseSpeed ) ; 
-  //leftForward( leftBaseSpeed );  
   readSensor(); 
   //drive_straight_PID(); 
-  pid();
- printSensors();  
+//  pid();
+  move_single_cell();
+  printSensors();  
+ 
   //printSensors(); 
   //readDistance(); 
-  delay(10); 
+  delay(1000); 
   
   
 }
@@ -563,25 +527,23 @@ void turn_right()  // point turn
 
 
 void move_single_cell() {
-  
- analogWrite(R_fwd, LOW);
-  analogWrite(L_fwd, LOW);
-  analogWrite(R_bkw, LOW);
-  analogWrite(L_bkw, LOW );
-  keep_moving = true;
+  keep_moving = true;  //
+  R_encoder_val = 0;
+  L_encoder_val = 0;
   do {
-    
-   rightForward(70); 
-   leftForward(70); 
-   if (L_encoder_val >= ONECELL) {
+   Serial.println("Moving single cell!!!!!!\n");
+   readSensor();  //read sensors 
+   pid(); //call PID
    
+   if (L_encoder_val >= ONECELL) {
      keep_moving = false;
-     R_encoder_val = 0;
-     L_encoder_val = 0;
-  analogWrite(R_fwd, HIGH);
-  analogWrite(L_fwd, HIGH);
-  analogWrite(R_bkw, HIGH);
-  analogWrite(L_bkw, HIGH);
+    
+    //stop fucntions
+     analogWrite(R_fwd, HIGH);
+     analogWrite(L_fwd, HIGH);
+     analogWrite(R_bkw, HIGH);
+     analogWrite(L_bkw, HIGH);
+     return;
    }
   } while(keep_moving);
  
