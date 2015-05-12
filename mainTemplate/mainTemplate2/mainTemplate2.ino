@@ -55,10 +55,6 @@ const int L_fwd = 4, L_bkw = 3;  //L_fwd = 1 and L_bkw = 0 -> go forward on left
 #define TURN_LEFT_COUNT 2500
 #define ONECELL 6000
 
-<<<<<<< HEAD
-=======
-#define ONECELL 6000
->>>>>>> 7451016ecfbeb6269893ee99138351585d8f2c4a
 
 // TODO: find the correct values for these variables by 
 // placing the mouse int he the middle of a maze path
@@ -203,7 +199,6 @@ void loop()
     change_dir(my_maze, &x, &y, &direction); //find the best direction to face based on flood values and turn to that direction
     move_single_cell(); //move one cell in the new direction
 
-<<<<<<< HEAD
     check_goal_reached(&x, &y, &found_dest);
 
   }
@@ -228,18 +223,6 @@ void loop()
     check_start_reached(&x,&y,&found_dest);
   } 
   delay(10); 
-=======
-  
-  readSensor(); 
-  //drive_straight_PID(); 
-//  pid();
-  move_single_cell();
-  printSensors();  
- 
-  //printSensors(); 
-  //readDistance(); 
-  delay(1000); 
->>>>>>> 7451016ecfbeb6269893ee99138351585d8f2c4a
   
 }
 ///////////////////////////////////
@@ -415,7 +398,6 @@ void turn_left() // point turn
 }
 
 
-<<<<<<< HEAD
 //// TURN RIGHT
 void turn_right()  // point turn
 {
@@ -434,113 +416,6 @@ void turn_right()  // point turn
   
   while(L_encoder_val - encoder_number < TURN_RIGHT_COUNT);
   //delay(400);  // tune this value for complete turn ******* ///////////////////
-=======
-void move_single_cell() {
-  keep_moving = true;  //
-  R_encoder_val = 0;
-  L_encoder_val = 0;
-  do {
-   Serial.println("Moving single cell!!!!!!\n");
-   readSensor();  //read sensors 
-   pid(); //call PID
-   
-   if (L_encoder_val >= ONECELL) {
-     keep_moving = false;
-    
-    //stop fucntions
-     analogWrite(R_fwd, HIGH);
-     analogWrite(L_fwd, HIGH);
-     analogWrite(R_bkw, HIGH);
-     analogWrite(L_bkw, HIGH);
-     return;
-   }
-  } while(keep_moving);
- 
-  
-}
-
-void drive_test(){
-  int leftDistance = readLeft(); 
-  
-  if(leftDistance > 80) {
-    leftBackward(30); 
-    rightBackward(30); 
-  }  
-  else if( leftDistance < 70 ) {
-    rightForward(30); 
-    leftForward(30);  
-  }
-  
-}
-
-
-
-/**** PID TEST ****/
-/*
-void drive_straight_PID(void){
-  int offset = 80;
-  static int previous_error = 0;
-  static int previous_time = 0;
-  static int last_big = 0;
-  int error; //current error values
-  int biggest;
-  int current_time; //current time
-  double total;
-  int leftDiagSensor, rightDiagSensor;
-  double kp = 0.5, kd = 0.5;
-  leftDiagSensor = leftSensor;
-  rightDiagSensor = rightSensor;
-  //debug print out sensor readings
-  //Serial.print("IR left diag: ");
-  //Serial.print(leftDiagSensor);
-  //Serial.print(" IR right diag: ");
-  //Serial.print(rightDiagSensor);
-  
-  if(!previous_time)
-  {
-    previous_time = millis();
-    return;
-  }
-  leftDiagSensor = leftSensor;
-  rightDiagSensor = rightSensor;
-  if( 1 )//temporarily for walls on both sides only |x|
-  {
-    error = rightDiagSensor - leftDiagSensor + offset;
-  }
-  total = error *kp;
-  previous_time = current_time;
-  
-  //analogWrite(R_fwd, HIGH - total);
-  //analogWrite(L_fwd, HIGH + total);
-  //what the PID will do (because motor functions are not done)
-  if(total > 25)
-    total=0.5*total; 
-  if(total > 50 )
-    total = 0; 
-  if(total<-50)
-    total=0;
-  Serial.print("total error: "); 
-  Serial.println(total); 
-  rightForward(rightBaseSpeed+total); 
-  leftForward(leftBaseSpeed-total); 
-  
-  if( error == 0 ){
-    Serial.print(" Mouse is straight: ");
-    Serial.println(error);
-     
-  }
-  if( error > 0 ){
-    Serial.print(" Mouse is veering right: ");
-    Serial.println(error);
-    
-  }
-  if( error < 0 ){
-    Serial.print(" Mouse is veering left: ");
-    Serial.println(error);
-  }
-}//end drive_straight_PID
-*/
->>>>>>> 7451016ecfbeb6269893ee99138351585d8f2c4a
 
   analogWrite(L_fwd, LOW);
   analogWrite(R_bkw, LOW);
