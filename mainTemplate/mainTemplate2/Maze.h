@@ -50,7 +50,6 @@
 #define NO 'n'
 
 /* Main template constants */
-#define ONECELL 61
 #define LEFT_WALL_SENSED 50
 #define FRONT_WALL_SENSED 400
 #define RIGHT_WALL_SENSED 50
@@ -58,9 +57,6 @@
 #define RIGHT_BASE_SPEED 23000
 #define P_VAL 7
 #define D_VAL 0
-#define TURN_LEFT_COUNT 17
-#define TURN_RIGHT_COUNT 18
-#define ABOUT_FACE_COUNT 39
 #define CENTER 2000
 #define LEFT_TWO_AWAY 570
 #define RIGHT_TWO_AWAY 630
