@@ -3,6 +3,7 @@
 #include "Maze.h"
 
 
+
 // Stack Constructor
 Stack * new_Stack() {
 

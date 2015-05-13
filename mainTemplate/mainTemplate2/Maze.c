@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include "Maze.h"
 
+
 static int debug_on = FALSE;    /* debug flag */
 
 /*** Debug Statement Functions ***/
