@@ -65,7 +65,7 @@ int hasRightWall = 50;
 int errorP = 0;
 int errorD = 0; 
 int oldErrorP = 0; 
-int newOffset = -80; 
+int newOffset = -20; 
 int rightBaseSpeed = 35; 
 int leftBaseSpeed = 31;
 
@@ -179,26 +179,25 @@ void setup()
 void loop()
 {
  
-  while( !leftSeen || !rightSeen || rfSeen || lfSeen ) {
+  Serial.println("entered loop"); 
+  while( !leftSeen || !rightSeen ) {
     readSensor(); 
     if( leftSensor > 500 ) 
       leftSeen = true; 
     if( rightSensor > 500 )
       rightSeen = true; 
-    if( RFSensor > 500 ) 
-      rfSeen = true; 
-    if( LFSensor > 500 ) 
-      lfSeen = true; 
   }
  
+  //pid(); 
   
-  //* trip from start to goal 
+  Serial.println("started"); 
+  // trip from start to goal 
   while(!found_dest){
     readSensor(); 
     visit_node(my_maze, my_stack, x, y, FALSE);
     change_dir(my_maze, &x, &y, &direction); //find the best direction to face based on flood values and turn to that direction
     move_single_cell(); //move one cell in the new direction
-
+    delay(300); 
     check_goal_reached(&x, &y, &found_dest);
 
   }
@@ -222,6 +221,7 @@ void loop()
     move_single_cell();
     check_start_reached(&x,&y,&found_dest);
   } 
+  
   delay(10); 
   
 }
@@ -257,6 +257,19 @@ void pid( void ) {
     errorP = .1 * (rightSensor - 80 ); 
     errorD = errorP - oldErrorP;  
   }
+  else {
+    int value = R_encoder_val;
+    analogWrite(L_bkw, LOW);
+    analogWrite(R_bkw, LOW);
+    analogWrite(L_fwd, 70);
+    analogWrite(R_fwd, 70);
+    
+    while(R_encoder_val - value < ONECELL);
+    analogWrite(R_fwd, HIGH);
+    analogWrite(L_fwd, HIGH);
+    analogWrite(R_bkw, HIGH);
+    analogWrite(L_bkw, HIGH);
+  }
   
   totalError = P * errorP + D * errorD; 
   oldErrorP = errorP; 
@@ -278,10 +291,34 @@ void pid( void ) {
   if( leftSpeed > 50 || leftSpeed < -50 )
     leftSpeed = leftSpeed/2 - 5 ; 
   
-  if(RFSensor > 500 || LFSensor > 500 ){
+  /*
+  if(RFSensor > 550 || LFSensor > 550 ){
+    
+      //int encoder_number = L_encoder_val;
+      readSensor(); 
+      
+      analogWrite(R_fwd, LOW);
+      analogWrite(L_fwd, LOW);
+      analogWrite(R_bkw, LOW);
+      analogWrite(L_bkw, LOW);
+      
+      //delay(1000);
+      Serial.println("turningiasdfopnasdf"); 
+      analogWrite(L_fwd, leftBaseSpeed);
+      
+      analogWrite(R_bkw, rightBaseSpeed);
+      while( RFSensor > 550 || LFSensor > 550 ){
+        readSensor(); 
+      }
+      
+    
+      analogWrite(L_fwd, LOW);
+      analogWrite(R_bkw, LOW);
+      
     rightSpeed = 0; 
     leftSpeed = 0;  
   }
+  */
   rightForward( rightSpeed ); 
   leftForward(leftSpeed ); 
   
@@ -381,7 +418,7 @@ void turn_left() // point turn
   analogWrite(R_bkw, LOW);
   analogWrite(L_bkw, LOW);
   
-  delay(1000);  // decrease delay if mouse pauses too much, increase it if the mouse tries to turn
+  //delay(1000);  // decrease delay if mouse pauses too much, increase it if the mouse tries to turn
   	       // before slowing down enough (same thing in turn_right)
   
   analogWrite(R_fwd, 70);
@@ -408,7 +445,7 @@ void turn_right()  // point turn
   analogWrite(R_bkw, LOW);
   analogWrite(L_bkw, LOW);
   
-  delay(1000);
+  //delay(1000);
   
   analogWrite(L_fwd, 70);
   
@@ -484,18 +521,26 @@ void change_dir ( Maze * this_maze, short * x, short * y, short * dir){
     (*x) = (*x) + 1;
   else if (next_dir == WEST) 
     (*y) = (*y) - 1;
-
+  Serial.println(next_dir); 
   // Turn the actual mouse 
   if (*dir == NORTH) {
-    if (next_dir == WEST)
+    Serial.println("North detected"); 
+    if (next_dir == WEST){
+      Serial.println("turning left"); 
       turn_left();
-    else if (next_dir == EAST)
+    }
+    else if (next_dir == EAST){
+      Serial.println("turning right"); 
       turn_right();
-    else if (next_dir == SOUTH)
+    }
+    else if (next_dir == SOUTH){
+      Serial.println("turning around"); 
       about_face();
+    }
   }
 
   else if (*dir == EAST) {
+    Serial.println("East detected"); 
     if (next_dir == NORTH)
       turn_left();
     else if (next_dir == SOUTH)
@@ -505,6 +550,7 @@ void change_dir ( Maze * this_maze, short * x, short * y, short * dir){
   }
 
   else if (*dir == SOUTH) {
+    Serial.println("Sout detected");
     if (next_dir == EAST)
       turn_left();
     else if (next_dir == WEST)
@@ -514,6 +560,7 @@ void change_dir ( Maze * this_maze, short * x, short * y, short * dir){
   }
 
   else if (*dir == WEST) {
+    Serial.println("West detected");
     if (next_dir == SOUTH)
       turn_left();
     else if (next_dir == NORTH)
@@ -532,21 +579,24 @@ void change_dir ( Maze * this_maze, short * x, short * y, short * dir){
 
 
 short check_left_wall() {
-  if (readLeft() > LEFT_WALL_SENSED)//need to adjust value
+  readSensor(); 
+  if (leftSensor > LEFT_WALL_SENSED)//need to adjust value
     return TRUE;
 
   return FALSE;
 }
 
 short check_right_wall() {
-  if (readRight() > RIGHT_WALL_SENSED)//need to adjust value  
+  readSensor(); 
+  if (rightSensor > RIGHT_WALL_SENSED)//need to adjust value  
     return TRUE;
 
   return FALSE;
 }
 
 short check_front_wall() {
-  if (readLeftFront() > FRONT_WALL_SENSED && readRightFront() > FRONT_WALL_SENSED)
+  readSensor(); 
+  if (LFSensor > FRONT_WALL_SENSED && RFSensor > FRONT_WALL_SENSED)
     return TRUE;
 
   return FALSE;

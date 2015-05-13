@@ -51,7 +51,7 @@
 
 /* Main template constants */
 #define LEFT_WALL_SENSED 50
-#define FRONT_WALL_SENSED 400
+#define FRONT_WALL_SENSED 600
 #define RIGHT_WALL_SENSED 50
 #define LEFT_BASE_SPEED 23000
 #define RIGHT_BASE_SPEED 23000
