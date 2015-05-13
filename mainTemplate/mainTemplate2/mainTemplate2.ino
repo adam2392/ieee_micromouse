@@ -51,21 +51,25 @@ Pins Used:
 #define dataPin 12      //connect to displays data input
 #define registerSelect 1 //the display's register select pin
 
-////// What are these?
-#define ABOUT_FACE_COUNT 5000
+//constants for encoder to turn right/left/180
 #define TURN_RIGHT_COUNT 2500
 #define TURN_LEFT_COUNT 2500
 #define TURN_AROUND_COUNT 5000
 
 #define ONECELL 6000
 
-int ran = 0; 
-// TODO: find the correct values for these variables by 
-// placing the mouse int he the middle of a maze path
-// and measuring the sensor readings 
-int hasLeftWall = 50; 
-int hasRightWall = 50; 
+//constants for wall sensing left/right/front
+#define hasLeftWall 50
+#define hasRightWall 50
+#define hasFrontWall 50
 
+// Directions
+#define NORTH 0
+#define EAST 1
+#define SOUTH 2
+#define WEST 3
+
+int ran = 0; 
 int errorP = 0;
 int errorD = 0; 
 int oldErrorP = 0; 
@@ -106,6 +110,7 @@ struct Node * temp; //node used for in-between start->goal, goal->start transiti
 short found_dest; //flag if goal is reached
 short direction; //direction that the mouse is facing
 short x, y; //current coordinates of the mouse in the maze
+
 short goal_x, goal_y; //goal coordinates once found
 
 
@@ -115,8 +120,6 @@ Sensor sensor = Sensor(LF_Emitter, LF_Receiver, RF_Emitter,
         R_Receiver, L_Receiver);
 int leftSensor = 0; 
 int rightSensor = 0; 
-int leftSense = 0; 
-int rightSense = 0; 
 int LFSensor = 0; 
 int RFSensor = 0; 
 
@@ -203,6 +206,7 @@ void loop()
 //     visit_node(my_maze,my_stack,x,y,TRUE);
 //     change_dir(my_maze,&x,&y,&direction);
      move_single_cell();                        // move a single cell forward
+     check_goal_reached(&x, &y, &found_dest);
 //     check_start_reached(&x,&y,&found_dest);    // check if destination has been reached
   }
   
@@ -217,25 +221,23 @@ void loop()
 */
 void pid( void ) {
   int totalError;   // the total error for the wall
-//  rightSense = rightSensor; 
-//  leftSense = leftSensor; 
   
   // compare sensor readings with constants for the wall -> if true it is in the middle
-  if(leftSensor > hasLeftWall && rightSensor > hasRightWall) {
+  if(check_left_wall() && check_right_wall()) {
     Serial.println("in the middle"); 
-    errorP = rightSense - leftSense - newOffset;  //how far away from middle we are
+    errorP = rightSensor - leftSensor - newOffset;  //how far away from middle we are
     errorD = errorP - oldErrorP;                  //change in error  
   }
   // sensor only reads in left wall 
-  else if( leftSense > hasLeftWall ){
+  else if(check_left_wall()){
     Serial.println("only left wall"); 
-    errorP = .1 * ( 80 - leftSense );      // the error away from center with only a left wall
+    errorP = .1 * ( 80 - leftSensor );      // the error away from center with only a left wall
     errorD = errorP - oldErrorP;           // change in error
   }
   // sensor only reads in right wall
-  else if( rightSense > hasRightWall ){
+  else if(check_right_wall()){
     Serial.println("only right wall"); 
-    errorP = .1 * (rightSense - 80 );      // the error away from center with only a right wall
+    errorP = .1 * (rightSensor - 80 );      // the error away from center with only a right wall
     errorD = errorP - oldErrorP;           // change in error
   }
   // no walls detected except for in front
@@ -248,7 +250,7 @@ void pid( void ) {
   int leftSpeed = leftBaseSpeed - totalError;
   
   // sensor reads in deadEnd -> stop mouse
-  if(RFSensor > 500 || LFSensor > 500 ){
+  if(check_front_wall()){
     rightSpeed = 0; 
     leftSpeed = 0;  
   }
@@ -306,6 +308,23 @@ void readSensor(void) {
   leftSensor  = sensor.readLeft(); 
   rightSensor = sensor.readRight(); 
   sensor.stopSides(); 
+}
+
+/* Sensor readings for checking if there is a wall on left/right/front */
+short check_left_wall() {
+  if (leftSensor > hasLeftWall)
+    return TRUE;
+  return FALSE;
+}
+short check_right_wall() {
+  if (rightSensor > hasRightWall)//need to adjust value  
+    return TRUE;
+  return FALSE;
+}
+short check_front_wall() {
+  if (RFSensor > hasFrontWall || LFSensor > hasFrontWall)
+    return TRUE;
+  return FALSE;
 }
 
 // Shouldn't touch this.... These are encoder functions that are hardware implemented
@@ -448,89 +467,63 @@ void move_single_cell() {
  * dir - current direction mouse is facing.
  * Description: makes the mouse face new direction. updates the new coordinates of the mouse.
  */
-//void change_dir ( Maze * this_maze, short * x, short * y, short * dir){
-//
-//  Node * this_node;
-//  short next_dir;//new direction to face
-//
-//  this_node = this_maze->map[(*x)][(*y)];
-//  next_dir = get_smallest_neighbor_dir(this_node, *dir);
-//
-//  /* update the appropriate location value x or y */
-//  if (next_dir == NORTH) 
-//    (*x) = (*x) - 1;
-//  else if (next_dir == EAST) 
-//    (*y) = (*y) + 1;
-//  else if (next_dir == SOUTH) 
-//    (*x) = (*x) + 1;
-//  else if (next_dir == WEST) 
-//    (*y) = (*y) - 1;
-//
-//  // Turn the actual mouse 
-//  if (*dir == NORTH) {
-//    if (next_dir == WEST)
-//      turn_left();
-//    else if (next_dir == EAST)
-//      turn_right();
-//    else if (next_dir == SOUTH)
-//      about_face();
-//  }
-//
-//  else if (*dir == EAST) {
-//    if (next_dir == NORTH)
-//      turn_left();
-//    else if (next_dir == SOUTH)
-//      turn_right();
-//    else if (next_dir == WEST)
-//      about_face();
-//  }
-//
-//  else if (*dir == SOUTH) {
-//    if (next_dir == EAST)
-//      turn_left();
-//    else if (next_dir == WEST)
-//      turn_right();
-//    else if (next_dir == NORTH)
-//      about_face();
-//  }
-//
-//  else if (*dir == WEST) {
-//    if (next_dir == SOUTH)
-//      turn_left();
-//    else if (next_dir == NORTH)
-//      turn_right();
-//    else if (next_dir == EAST)
-//      about_face();
-//  }
-//
-//  /* update the direction */
-//  (*dir) = next_dir;
-//
-//
-//}//end change_dir
+void change_dir ( Maze * this_maze, short * x, short * y, short * dir){
+  Node * this_node;  //initialize a node
+  short next_dir;    //new direction to face after performing floodfill calculation
 
+  this_node = this_maze->map[(*x)][(*y)];
+  next_dir = get_smallest_neighbor_dir(this_node, *dir);
 
-//short check_left_wall() {
-//  if (readLeft() > LEFT_WALL_SENSED)//need to adjust value
-//    return TRUE;
-//
-//  return FALSE;
-//}
+  /* update the appropriate location value x or y */
+  if (next_dir == NORTH) 
+    (*x) = (*x) - 1;
+  else if (next_dir == EAST) 
+    (*y) = (*y) + 1;
+  else if (next_dir == SOUTH) 
+    (*x) = (*x) + 1;
+  else if (next_dir == WEST) 
+    (*y) = (*y) - 1;
 
-//short check_right_wall() {
-//  if (readRight() > RIGHT_WALL_SENSED)//need to adjust value  
-//    return TRUE;
-//
-//  return FALSE;
-//}
-//
-//short check_front_wall() {
-//  if (readLeftFront() > FRONT_WALL_SENSED && readRightFront() > FRONT_WALL_SENSED)
-//    return TRUE;
-//
-//  return FALSE;
-//}
+  // Turn the actual mouse in the optimal direction
+  if (*dir == NORTH) {
+    if (next_dir == WEST)
+      turn_left();
+    else if (next_dir == EAST)
+      turn_right();
+    else if (next_dir == SOUTH)
+      turn_around();
+  }
 
+  else if (*dir == EAST) {
+    if (next_dir == NORTH)
+      turn_left();
+    else if (next_dir == SOUTH)
+      turn_right();
+    else if (next_dir == WEST)
+      turn_around();
+  }
+
+  else if (*dir == SOUTH) {
+    if (next_dir == EAST)
+      turn_left();
+    else if (next_dir == WEST)
+      turn_right();
+    else if (next_dir == NORTH)
+      turn_around();
+  }
+
+  else if (*dir == WEST) {
+    if (next_dir == SOUTH)
+      turn_left();
+    else if (next_dir == NORTH)
+      turn_right();
+    else if (next_dir == EAST)
+      turn_around();
+  }
+
+  /* update the direction */
+  (*dir) = next_dir;
+}//end change_dir
 
 
 /** Function: visit_node
@@ -540,131 +533,118 @@ void move_single_cell() {
  * flag - whether to update goal cells or not
  * Description: visits the cell, checks for walls, and updates flood values
  */
-//void visit_node(Maze * this_maze, Stack * this_stack, short x, short y, short flag) {
-//
-//  Node * this_node;
-//  short wall_on_left, wall_on_front, wall_on_right;
-//  short northwall, eastwall, southwall, westwall;
-//
-//  this_node = this_maze->map[x][y];
-//  wall_on_left = wall_on_front = wall_on_right = FALSE;
-//  northwall = eastwall = southwall = westwall = FALSE;
-//
-//  // read walls and set
-//  // read left
-//  wall_on_left = check_left_wall();
-//  wall_on_front = check_front_wall();
-//  wall_on_right = check_right_wall();  
-//
-//
-//  if (direction == NORTH) {
-//
-//    if (wall_on_left) {
-//      set_wall(this_node, WEST);
-//      westwall = TRUE; 
-//    }
-//    if (wall_on_front) {
-//      set_wall(this_node, NORTH);
-//      northwall = TRUE;
-//    }
-//    if (wall_on_right) {
-//      set_wall(this_node, EAST); 
-//      eastwall = TRUE;
-//    }  
-//  }
-//  else if (direction == EAST){
-//
-//    if (wall_on_left) {
-//      set_wall(this_node, NORTH);
-//      northwall = TRUE; 
-//    }
-//    if (wall_on_front) {
-//      set_wall(this_node, EAST);
-//      eastwall = TRUE;
-//    }
-//    if (wall_on_right) {
-//      set_wall(this_node, SOUTH);
-//      southwall = TRUE;
-//    }
-//  }
-//  else if (direction == SOUTH) {
-//
-//    if (wall_on_left) {
-//      set_wall(this_node, EAST);
-//      eastwall = TRUE; 
-//    }
-//    if (wall_on_front) {
-//      set_wall(this_node, SOUTH);
-//      southwall = TRUE;
-//    }
-//    if (wall_on_right) {
-//      set_wall(this_node, WEST); 
-//      westwall = TRUE;
-//    }
-//  }
-//  else {
-//
-//    if (wall_on_left) {
-//      set_wall(this_node, SOUTH);
-//      southwall = TRUE; 
-//    }
-//    if (wall_on_front) {
-//      set_wall(this_node, WEST);
-//      westwall = TRUE;
-//    }
-//    if (wall_on_right) {
-//      set_wall(this_node, NORTH); 
-//      northwall = TRUE;
-//    }
-//  }
-//
-//  if (northwall) {
-//    if (this_node->row != 0)
-//      push (this_stack, MAP[ROW-1][COL]);
-//    set_wall(this_node, NORTH);
-//  }
-//  if (eastwall) {
-//    if (this_node->column != SIZE-1)
-//      push (this_stack, MAP[ROW][COL+1]);
-//    set_wall(this_node, EAST);
-//  }
-//  if (southwall) {
-//    if (this_node->row != SIZE-1)
-//      push (this_stack, MAP[ROW+1][COL]);
-//    set_wall(this_node, SOUTH);
-//  }
-//  if (westwall) {
-//    if (this_node->column != 0)
-//      push (this_stack, MAP[ROW][COL-1]);
-//    set_wall(this_node, WEST);
-//  }
-//
-//  /* push this node itself, as it was updated */
-//  push(this_stack, this_node);
-//
-//  /* pop until the stack is empty, and call flood_fill on that node */
-//  while (!is_empty_Stack(this_stack)) {
-//    pop(this_stack, &this_node);
-//    /* NOTE: the flag parameter determines wheter to update goal cells or not */
-//    flood_fill(this_node, this_stack, flag);
-//  }
-//
-//  set_visited (this_node);
-//}//end visit_node
-//
-///** Function: check_goal_reached
-// * Parameters: x,y - coordinate to be checked
-// * found_goal - flag if goal cell was found or not
-// * Description: updates flag for whether goal cell was reached
-// */
-//void check_goal_reached (short * x, short * y, short * found_goal) {
-//
-//  if (*x == SIZE / 2 || *x == SIZE / 2 - 1) {
-//    if (*y == SIZE / 2 || *y == SIZE / 2 - 1) {
-//      *(found_goal) = TRUE;
-//    }
-//  }
-//}
+void visit_node(Maze * this_maze, Stack * this_stack, short x, short y, short flag) {
+  Node * this_node;                                  //initialize a node
+  short northwall, eastwall, southwall, westwall;    //boolean values of wall on each side
+
+  this_node = this_maze->map[x][y];                  //initialize node to the node we want to go to
+  northwall = eastwall = southwall = westwall = FALSE;
+
+  //correspondingly update the walls based on which direction we are facing
+  if (direction == NORTH) {    //check if direction is currently facing NORTH
+    if (check_left_wall()) {      //there is a left wall
+      set_wall(this_node, WEST);  //set wall on the left
+      westwall = TRUE;             
+    }
+    if (check_front_wall()) {    //there is a front wall
+      set_wall(this_node, NORTH);
+      northwall = TRUE;
+    }
+    if (check_right_wall()) {        //there is a right wall
+      set_wall(this_node, EAST); 
+      eastwall = TRUE;
+    }  
+  }
+  else if (direction == EAST){  //check if direction is currently facing EAST
+    if (check_left_wall()) {
+      set_wall(this_node, NORTH);
+      northwall = TRUE; 
+    }
+    if (check_front_wall()) {
+      set_wall(this_node, EAST);
+      eastwall = TRUE;
+    }
+    if (check_right_wall()) {
+      set_wall(this_node, SOUTH);
+      southwall = TRUE;
+    }
+  }
+  else if (direction == SOUTH) {
+    if (check_left_wall()) {
+      set_wall(this_node, EAST);
+      eastwall = TRUE; 
+    }
+    if (check_front_wall()) {
+      set_wall(this_node, SOUTH);
+      southwall = TRUE;
+    }
+    if (check_right_wall()) {
+      set_wall(this_node, WEST); 
+      westwall = TRUE;
+    }
+  }
+  else {    //direction we are facing is WEST
+    if (check_left_wall()) {
+      set_wall(this_node, SOUTH);
+      southwall = TRUE; 
+    }
+    if (check_front_wall()) {
+      set_wall(this_node, WEST);
+      westwall = TRUE;
+    }
+    if (check_right_wall()) {
+      set_wall(this_node, NORTH); 
+      northwall = TRUE;
+    }
+  }
+
+  /* If there is a wall -> do a series of checks and pushes onto the stack */
+  if (northwall) {
+    if (this_node->row != 0)
+      push (this_stack, MAP[ROW-1][COL]);
+    set_wall(this_node, NORTH);
+  }
+  if (eastwall) {
+    if (this_node->column != SIZE-1)
+      push (this_stack, MAP[ROW][COL+1]);
+    set_wall(this_node, EAST);
+  }
+  if (southwall) {
+    if (this_node->row != SIZE-1)
+      push (this_stack, MAP[ROW+1][COL]);
+    set_wall(this_node, SOUTH);
+  }
+  if (westwall) {
+    if (this_node->column != 0)
+      push (this_stack, MAP[ROW][COL-1]);
+    set_wall(this_node, WEST);
+  }
+  /* push this node itself, as it was updated */
+  push(this_stack, this_node);
+
+  /* pop until the stack is empty, and call flood_fill on that node */
+  while (!is_empty_Stack(this_stack)) {
+    pop(this_stack, &this_node);
+    /* NOTE: the flag parameter determines wheter to update goal cells or not */
+    flood_fill(this_node, this_stack, flag);
+  }
+  set_visited (this_node);
+}//end visit_node
+
+/** Function: check_goal_reached
+ * Parameters: x,y - coordinate to be checked
+ * found_goal - flag if goal cell was found or not
+ * Description: updates flag for whether goal cell was reached
+ */
+void check_goal_reached (short * x, short * y, short * found_goal) {
+  //if the mouse is in the center of the maze -> it found it's goal
+  if (*x == SIZE / 2 || *x == SIZE / 2 - 1) {  
+    if (*y == SIZE / 2 || *y == SIZE / 2 - 1) {
+      *(found_goal) = TRUE;
+    }
+  }
+}
+
 ///* update flag for whether goal cell was reached */
 //void check_start_reached (short * x, short * y, short * found_start) {
 //
@@ -673,127 +653,78 @@ void move_single_cell() {
 //    //printf("Start Coorinates Reached: %d, %d\n", *x, *y);
 //  }
 //}
-//
-//
-///**Function: set_center_walls
-//   Description: fills in the wall values of the centers based on where
-//                you discovered the goal from.
-//*/
-//void set_center_walls(short entered_x, short entered_y) {
-//
-//  // 8, 8 : NORTH or WEST
-//  if (entered_x == SIZE/2 && entered_y == SIZE/2) {
-//
-//    set_wall(my_maze->map[SIZE/2 - 1][SIZE/2 - 1], NORTH);
-//    set_wall(my_maze->map[SIZE/2 - 1][SIZE/2 - 1], WEST);
-//    set_wall(my_maze->map[SIZE/2 - 1][SIZE/2],     NORTH);
-//    set_wall(my_maze->map[SIZE/2 - 1][SIZE/2],     EAST);
-//    set_wall(my_maze->map[SIZE/2][SIZE/2 - 1], SOUTH);
-//    set_wall(my_maze->map[SIZE/2][SIZE/2 - 1], WEST);
-//  }
-//
-//  // 8, 7 : NORTH or EAST
-//  if (entered_x == SIZE/2 && entered_y == SIZE/2 - 1) {
-//
-//    set_wall(my_maze->map[SIZE/2 - 1][SIZE/2 - 1], NORTH);
-//    set_wall(my_maze->map[SIZE/2 - 1][SIZE/2 - 1], WEST);
-//    set_wall(my_maze->map[SIZE/2 - 1][SIZE/2],     NORTH);
-//    set_wall(my_maze->map[SIZE/2 - 1][SIZE/2],     EAST);
-//    set_wall(my_maze->map[SIZE/2][SIZE/2], SOUTH);
-//    set_wall(my_maze->map[SIZE/2][SIZE/2], EAST);
-//  }
-//
-//  // 7, 7 : SOUTH or EAST
-//  if (entered_x == SIZE/2 - 1 && entered_y == SIZE/2 - 1) {
-//
-//    set_wall(my_maze->map[SIZE/2][SIZE/2 - 1], SOUTH);
-//    set_wall(my_maze->map[SIZE/2][SIZE/2 - 1], WEST);
-//    set_wall(my_maze->map[SIZE/2 - 1][SIZE/2],     NORTH);
-//    set_wall(my_maze->map[SIZE/2 - 1][SIZE/2],     EAST);
-//    set_wall(my_maze->map[SIZE/2][SIZE/2], SOUTH);
-//    set_wall(my_maze->map[SIZE/2][SIZE/2], EAST);
-//  }
-//
-//
-//  // 7, 8 : SOUTH or WEST
-//  if (entered_x == SIZE/2 - 1 && entered_y == SIZE/2) {
-//
-//    set_wall(my_maze->map[SIZE/2][SIZE/2 - 1], SOUTH);
-//    set_wall(my_maze->map[SIZE/2][SIZE/2 - 1], WEST);
-//    set_wall(my_maze->map[SIZE/2 - 1][SIZE/2 - 1], NORTH);
-//    set_wall(my_maze->map[SIZE/2 - 1][SIZE/2 - 1], WEST);
-//    set_wall(my_maze->map[SIZE/2][SIZE/2], SOUTH);
-//    set_wall(my_maze->map[SIZE/2][SIZE/2], EAST);
-//  }
-//
-//}
-//
-///** Function: reflood_from_goal
-//    Description: Resets all the flood values so that the goal is now the start without modifying wall values.
-//*/
-//
-//void reflood_from_goal() {
-// 
-//  for (int i = 0; i < SIZE; i++) 
-//      for (int j = 0; j < SIZE; j++)
-//        my_maze->map[i][j]->floodval = LARGEVAL;
-//      
-//    // set the start value to zero 
-//    set_value(my_maze->map[START_X][START_Y], 0);
-//
-//    /* push the neighbors of start cell to stack 
-//       then pop everything until all cells updated*/
-//    push_open_neighbors(my_maze->map[START_X][START_Y], my_stack);
-//    while(!is_empty_Stack(my_stack)) {
-//      pop(my_stack, &temp);
-//      if (!(temp->row == 15 && temp->column == 0))
-//        flood_fill(temp, my_stack, TRUE);
-//    }
-//  
-//}
 
 
+/**Function: set_center_walls
+   Description: fills in the wall values of the centers based on where
+                you discovered the goal from.
+*/
+void set_center_walls(short entered_x, short entered_y) {
 
-// for debugging
-//void readEnc(){
-//   Serial.print("Time: "); 
-//   Serial.println(time++); 
-//   
-//   Serial.print("Right EncA: ");
-//   Serial.println(digitalRead(RenchA));
-//   
-//   Serial.print("Right  EncB: ");
-//   Serial.println(digitalRead(RenchB)); 
-//   Serial.println(" "); 
-//    
-//   Serial.print("Left EncA: ");
-//   Serial.println(digitalRead(LenchA));
-//   
-//   Serial.print("Left EncB: ");
-//   Serial.println(digitalRead(LenchB));
-//   Serial.println(" ");
-//   Serial.println(" ");
-//}
-//
-//void printSensors(){
-//  Serial.print("Time: "); 
-//  Serial.println(micros());
-//  Serial.print("IR left diag: ");
-//  Serial.println(leftSensor);
-//  Serial.print("IR right diag: "); 
-//  Serial.println(rightSensor); 
-//  Serial.print("IR left front: ");
-//  Serial.println(LFSensor);
-//  Serial.print("IR right front: "); 
-//  Serial.println(RFSensor);
-//  Serial.print("Offcenter: "); 
-//  Serial.println(RFSensor - LFSensor + 100); 
-//}
-//
-//void readDistance(){
-// Serial.print("Right encoder: "); 
-// Serial.println(R_encoder_val); 
-// Serial.print("Left encoder: "); 
-// Serial.println(L_encoder_val);  
-//}
+  // 8, 8 : NORTH or WEST
+  if (entered_x == SIZE/2 && entered_y == SIZE/2) {
 
+    set_wall(my_maze->map[SIZE/2 - 1][SIZE/2 - 1], NORTH);
+    set_wall(my_maze->map[SIZE/2 - 1][SIZE/2 - 1], WEST);
+    set_wall(my_maze->map[SIZE/2 - 1][SIZE/2],     NORTH);
+    set_wall(my_maze->map[SIZE/2 - 1][SIZE/2],     EAST);
+    set_wall(my_maze->map[SIZE/2][SIZE/2 - 1], SOUTH);
+    set_wall(my_maze->map[SIZE/2][SIZE/2 - 1], WEST);
+  }
+
+  // 8, 7 : NORTH or EAST
+  if (entered_x == SIZE/2 && entered_y == SIZE/2 - 1) {
+
+    set_wall(my_maze->map[SIZE/2 - 1][SIZE/2 - 1], NORTH);
+    set_wall(my_maze->map[SIZE/2 - 1][SIZE/2 - 1], WEST);
+    set_wall(my_maze->map[SIZE/2 - 1][SIZE/2],     NORTH);
+    set_wall(my_maze->map[SIZE/2 - 1][SIZE/2],     EAST);
+    set_wall(my_maze->map[SIZE/2][SIZE/2], SOUTH);
+    set_wall(my_maze->map[SIZE/2][SIZE/2], EAST);
+  }
+
+  // 7, 7 : SOUTH or EAST
+  if (entered_x == SIZE/2 - 1 && entered_y == SIZE/2 - 1) {
+
+    set_wall(my_maze->map[SIZE/2][SIZE/2 - 1], SOUTH);
+    set_wall(my_maze->map[SIZE/2][SIZE/2 - 1], WEST);
+    set_wall(my_maze->map[SIZE/2 - 1][SIZE/2],     NORTH);
+    set_wall(my_maze->map[SIZE/2 - 1][SIZE/2],     EAST);
+    set_wall(my_maze->map[SIZE/2][SIZE/2], SOUTH);
+    set_wall(my_maze->map[SIZE/2][SIZE/2], EAST);
+  }
+
+
+  // 7, 8 : SOUTH or WEST
+  if (entered_x == SIZE/2 - 1 && entered_y == SIZE/2) {
+
+    set_wall(my_maze->map[SIZE/2][SIZE/2 - 1], SOUTH);
+    set_wall(my_maze->map[SIZE/2][SIZE/2 - 1], WEST);
+    set_wall(my_maze->map[SIZE/2 - 1][SIZE/2 - 1], NORTH);
+    set_wall(my_maze->map[SIZE/2 - 1][SIZE/2 - 1], WEST);
+    set_wall(my_maze->map[SIZE/2][SIZE/2], SOUTH);
+    set_wall(my_maze->map[SIZE/2][SIZE/2], EAST);
+  }
+
+}
+
+/** Function: reflood_from_goal
+    Description: Resets all the flood values so that the goal is now the start without modifying wall values.
+*/
+void reflood_from_goal() {
+  for (int i = 0; i < SIZE; i++) 
+      for (int j = 0; j < SIZE; j++)
+        my_maze->map[i][j]->floodval = LARGEVAL;
+      
+    // set the start value to zero 
+    set_value(my_maze->map[START_X][START_Y], 0);
+
+    /* push the neighbors of start cell to stack 
+       then pop everything until all cells updated*/
+    push_open_neighbors(my_maze->map[START_X][START_Y], my_stack);
+    while(!is_empty_Stack(my_stack)) {
+      pop(my_stack, &temp);
+      if (!(temp->row == 15 && temp->column == 0))
+        flood_fill(temp, my_stack, TRUE);
+    }
+}
