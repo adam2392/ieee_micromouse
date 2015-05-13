@@ -55,6 +55,7 @@ Pins Used:
 #define ABOUT_FACE_COUNT 5000
 #define TURN_RIGHT_COUNT 2500
 #define TURN_LEFT_COUNT 2500
+#define TURN_AROUND_COUNT 5000
 
 #define ONECELL 6000
 
@@ -189,8 +190,13 @@ void setup()
 void loop()
 {
   /*
+  test:
+  turn_left(); //tune TURN_LEFT_COUNT
+  turn_right();  // tune TURN_RIGHT_COUNT
+  turn_around(); // tune TURN_AROUND_COUNT
   
   */
+  
   //while the center destination hasn't been reached
   while(!found_dest){
      readSensor();                               // read sensors
@@ -200,13 +206,14 @@ void loop()
 //     check_start_reached(&x,&y,&found_dest);    // check if destination has been reached
   }
   
-  //redo floodfill
+  ////redo floodfill
   
-  //speed runs?
+  ////speed runs?
 }
 
 /*Function: pid
-  Description: 
+  Description: Essentially helps control mouse ONLY when moving forward in the desired direction
+  Uses other functions to turn mouse in that direction first!
 */
 void pid( void ) {
   int totalError;   // the total error for the wall
@@ -233,6 +240,7 @@ void pid( void ) {
   }
   // no walls detected except for in front
   else { 
+    // how are we going to make sure mouse drive correctly?
   }
   
   //initialize motor speeds based on error, and what we set as the base speed
@@ -300,8 +308,6 @@ void readSensor(void) {
   sensor.stopSides(); 
 }
 
-
-
 // Shouldn't touch this.... These are encoder functions that are hardware implemented
 // to increase encoder value with every turn of the wheel
 void left_interrupt()
@@ -313,83 +319,15 @@ void right_interrupt()
   ++R_encoder_val;  
 }
 
-
-////This is just for debugging, **** not using....
-//void readSensors(){
-//  Serial.print("Time: "); 
-//  Serial.println(time++);
-//  Serial.print("IR left diag: ");
-//  Serial.println(readLeft());
-//  Serial.print("IR right diag: "); 
-//  Serial.println(readRight()); 
-//  Serial.print("IR left front: ");
-//  Serial.println(readLeftFront());
-//  Serial.print("IR right front: "); 
-//  Serial.println(readRightFront());
-//}
-void readEnc(){
-  
-   //rightenc = analogRead(RenchA); 
-   Serial.print("Time: "); 
-   Serial.println(time++); 
-   
-   Serial.print("Right EncA: ");
-   Serial.println(digitalRead(RenchA));
-   
-   //rightencb = analogRead(RenchB); 
-   Serial.print("Right  EncB: ");
-   Serial.println(digitalRead(RenchB)); 
-   Serial.println(" "); 
-   
-   //leftenca = analogRead(LenchA); 
-   Serial.print("Left EncA: ");
-   Serial.println(digitalRead(LenchA));
-  
-   //leftencb = analogRead(LenchB);  
-   Serial.print("Left EncB: ");
-   Serial.println(digitalRead(LenchB));
-   Serial.println(" ");
-   Serial.println(" ");
-   /*
-   Serial.print("Time: "); 
-   Serial.println(time++);
-   Serial.print("Right Encoder: "); 
-   Serial.println(R_encoder_val); 
-   Serial.print("Left Encoder: "); 
-   Serial.println(L_encoder_val);
-   */
-   
-}
-
-
-void about_face()  // because, why not?
+/* Function: turn_left
+Description: Should make the mouse turn left 90 degrees without moving forward
+ ** or make it turn left and move forward 1 cell? (doubtful because it could be error prone)
+*/
+void turn_left()
 {
-  delay(2000); 
-     
-	int value = R_encoder_val;
-	
-	analogWrite(L_fwd, LOW);
-	analogWrite(L_bkw, 70);
-	analogWrite(R_fwd, 70);
-	analogWrite(R_bkw, LOW);
-
-	
-	
-	while(R_encoder_val - value < ABOUT_FACE_COUNT);  // *********increase value to turn more***********
-	
-	analogWrite(L_bkw, LOW);
-	analogWrite(R_fwd, LOW);
-        R_encoder_val = 0;
-        L_encoder_val = 0;
-     
+  int encoder_number = L_encoder_val;  // get the left encoder value at the beginning of when we want to turn
   
-}
-
-
-void turn_left() // point turn
-{
-  int encoder_number = L_encoder_val;
-  
+  //turn off all motors
   analogWrite(R_fwd, LOW);
   analogWrite(L_fwd, LOW);
   analogWrite(R_bkw, LOW);
@@ -398,104 +336,111 @@ void turn_left() // point turn
   delay(1000);  // decrease delay if mouse pauses too much, increase it if the mouse tries to turn
   	       // before slowing down enough (same thing in turn_right)
   
-  analogWrite(R_fwd, 70);
-  
+  // make right side go forward, left side go backwards -> turn left
+  analogWrite(R_fwd, 70); 
   analogWrite(L_bkw, 70); 
   
-  //delay(400);
+  // don't stop the analogWrite until mouse has completed a left turn
   while(L_encoder_val - encoder_number < TURN_LEFT_COUNT );  // tune this value for complete turn ************* ///////////////////
 
   analogWrite(R_fwd, LOW);
   analogWrite(L_bkw, LOW);
+  
+  // why are we setting it to 0?
   R_encoder_val = 0;
   L_encoder_val = 0;
 }
 
+/* Function: turn_right
+Description: Should make the mouse turn right 90 degrees without moving forward
+
+***Why are we using L_encoder_val
+*/
 void turn_right()  // point turn
 {
-  int encoder_number = L_encoder_val;
+  int encoder_number = L_encoder_val;  //find the current right encoder value
   
+  //turn off all motors at beginning
   analogWrite(R_fwd, LOW);
   analogWrite(L_fwd, LOW);
   analogWrite(R_bkw, LOW);
   analogWrite(L_bkw, LOW);
   
-  delay(1000);
+  delay(1000);  //delay 1 second
   
+  //turn left motor forward, and right motor back -> turn right
   analogWrite(L_fwd, 70);
-  
   analogWrite(R_bkw, 70);
   
+   // don't stop the analogWrite until mouse has completed a right turn
   while(L_encoder_val - encoder_number < TURN_RIGHT_COUNT);
   //delay(400);  // tune this value for complete turn ******* ///////////////////
 
+  //turn off motors
   analogWrite(L_fwd, LOW);
   analogWrite(R_bkw, LOW);
-  R_encoder_val = 0;
-  L_encoder_val = 0;
-}
-
-
-void move_single_cell() {
-  keep_moving = true;  //
-  R_encoder_val = 0;
-  L_encoder_val = 0;
-  do {
-   Serial.println("Moving single cell!!!!!!\n");
-   readSensor();  //read sensors 
-   pid(); //call PID
-   
-   if (L_encoder_val >= ONECELL) {
-     keep_moving = false;
-    
-    //stop fucntions
-     analogWrite(R_fwd, HIGH);
-     analogWrite(L_fwd, HIGH);
-     analogWrite(R_bkw, HIGH);
-     analogWrite(L_bkw, HIGH);
-     return;
-   }
-  } while(keep_moving);
- 
   
+  R_encoder_val = 0;
+  L_encoder_val = 0;
 }
 
-//void drive_test(){
-//  int leftDistance = readLeft(); 
-//  
-//  if(leftDistance > 80) {
-//    leftBackward(30); 
-//    rightBackward(30); 
-//  }  
-//  else if( leftDistance < 70 ) {
-//    rightForward(30); 
-//    leftForward(30);  
-//  }
-//  
-//}
+/* Function: turn_around
+Description: Should make the mouse turn around 180 degrees without moving forward
 
-void printSensors(){
-  Serial.print("Time: "); 
-  Serial.println(micros());
-  Serial.print("IR left diag: ");
-  Serial.println(leftSensor);
-  Serial.print("IR right diag: "); 
-  Serial.println(rightSensor); 
-  Serial.print("IR left front: ");
-  Serial.println(LFSensor);
-  Serial.print("IR right front: "); 
-  Serial.println(RFSensor);
-  Serial.print("Offcenter: "); 
-  Serial.println(RFSensor - LFSensor + 100); 
+***Why are we using L_encoder_val
+*/
+void turn_around()  // point turn
+{
+  int encoder_number = L_encoder_val;  //find the current right encoder value
+  
+  //turn off all motors at beginning
+  analogWrite(R_fwd, LOW);
+  analogWrite(L_fwd, LOW);
+  analogWrite(R_bkw, LOW);
+  analogWrite(L_bkw, LOW);
+  
+  delay(1000);  //delay 1 second
+  
+  //turn left motor forward, and right motor back -> turn around
+  analogWrite(L_fwd, 70);
+  analogWrite(R_bkw, 70);
+  
+   // don't stop the analogWrite until mouse has completed a 180 degree turn
+  while(L_encoder_val - encoder_number < TURN_AROUND_COUNT);
+  //delay(400);  // tune this value for complete turn ******* ///////////////////
+
+  //turn off motors
+  analogWrite(L_fwd, LOW);
+  analogWrite(R_bkw, LOW);
+  
+  R_encoder_val = 0;
+  L_encoder_val = 0;
 }
 
-void readDistance(){
- Serial.print("Right encoder: "); 
- Serial.println(R_encoder_val); 
- Serial.print("Left encoder: "); 
- Serial.println(L_encoder_val);  
+/* Function: move_single_cell
+Description: Should make the mouse move forward in the direction of 1 cell
+*/
+void move_single_cell() {
+  //initialize encoder values to 0
+  R_encoder_val = 0;
+  L_encoder_val = 0;
+  Serial.println("Moving single cell!!!!!!\n");
+  
+  //while the left encoder has not moved 1 "full" cell yet
+  while(L_encoder_val <= ONECELL)
+  {
+    readSensor();    //read in sensors to update sensor readings
+    pid();           //call pid to make sure it is going straight based on sensor readings
+  }
+  
+  //stop fucntions after finished moving 1 cell
+  analogWrite(R_fwd, HIGH);
+  analogWrite(L_fwd, HIGH);
+  analogWrite(R_bkw, HIGH);
+  analogWrite(L_bkw, HIGH);
+  
+  Serial.println("Done moving single cell!!!!");  
 }
-
 
 /** Function: change_dir
  * Parameters: this_maze - the maze with flood values
@@ -503,66 +448,66 @@ void readDistance(){
  * dir - current direction mouse is facing.
  * Description: makes the mouse face new direction. updates the new coordinates of the mouse.
  */
-void change_dir ( Maze * this_maze, short * x, short * y, short * dir){
-
-  Node * this_node;
-  short next_dir;//new direction to face
-
-  this_node = this_maze->map[(*x)][(*y)];
-  next_dir = get_smallest_neighbor_dir(this_node, *dir);
-
-  /* update the appropriate location value x or y */
-  if (next_dir == NORTH) 
-    (*x) = (*x) - 1;
-  else if (next_dir == EAST) 
-    (*y) = (*y) + 1;
-  else if (next_dir == SOUTH) 
-    (*x) = (*x) + 1;
-  else if (next_dir == WEST) 
-    (*y) = (*y) - 1;
-
-  // Turn the actual mouse 
-  if (*dir == NORTH) {
-    if (next_dir == WEST)
-      turn_left();
-    else if (next_dir == EAST)
-      turn_right();
-    else if (next_dir == SOUTH)
-      about_face();
-  }
-
-  else if (*dir == EAST) {
-    if (next_dir == NORTH)
-      turn_left();
-    else if (next_dir == SOUTH)
-      turn_right();
-    else if (next_dir == WEST)
-      about_face();
-  }
-
-  else if (*dir == SOUTH) {
-    if (next_dir == EAST)
-      turn_left();
-    else if (next_dir == WEST)
-      turn_right();
-    else if (next_dir == NORTH)
-      about_face();
-  }
-
-  else if (*dir == WEST) {
-    if (next_dir == SOUTH)
-      turn_left();
-    else if (next_dir == NORTH)
-      turn_right();
-    else if (next_dir == EAST)
-      about_face();
-  }
-
-  /* update the direction */
-  (*dir) = next_dir;
-
-
-}//end change_dir
+//void change_dir ( Maze * this_maze, short * x, short * y, short * dir){
+//
+//  Node * this_node;
+//  short next_dir;//new direction to face
+//
+//  this_node = this_maze->map[(*x)][(*y)];
+//  next_dir = get_smallest_neighbor_dir(this_node, *dir);
+//
+//  /* update the appropriate location value x or y */
+//  if (next_dir == NORTH) 
+//    (*x) = (*x) - 1;
+//  else if (next_dir == EAST) 
+//    (*y) = (*y) + 1;
+//  else if (next_dir == SOUTH) 
+//    (*x) = (*x) + 1;
+//  else if (next_dir == WEST) 
+//    (*y) = (*y) - 1;
+//
+//  // Turn the actual mouse 
+//  if (*dir == NORTH) {
+//    if (next_dir == WEST)
+//      turn_left();
+//    else if (next_dir == EAST)
+//      turn_right();
+//    else if (next_dir == SOUTH)
+//      about_face();
+//  }
+//
+//  else if (*dir == EAST) {
+//    if (next_dir == NORTH)
+//      turn_left();
+//    else if (next_dir == SOUTH)
+//      turn_right();
+//    else if (next_dir == WEST)
+//      about_face();
+//  }
+//
+//  else if (*dir == SOUTH) {
+//    if (next_dir == EAST)
+//      turn_left();
+//    else if (next_dir == WEST)
+//      turn_right();
+//    else if (next_dir == NORTH)
+//      about_face();
+//  }
+//
+//  else if (*dir == WEST) {
+//    if (next_dir == SOUTH)
+//      turn_left();
+//    else if (next_dir == NORTH)
+//      turn_right();
+//    else if (next_dir == EAST)
+//      about_face();
+//  }
+//
+//  /* update the direction */
+//  (*dir) = next_dir;
+//
+//
+//}//end change_dir
 
 
 //short check_left_wall() {
@@ -805,5 +750,50 @@ void change_dir ( Maze * this_maze, short * x, short * y, short * dir){
 //        flood_fill(temp, my_stack, TRUE);
 //    }
 //  
+//}
+
+
+
+// for debugging
+//void readEnc(){
+//   Serial.print("Time: "); 
+//   Serial.println(time++); 
+//   
+//   Serial.print("Right EncA: ");
+//   Serial.println(digitalRead(RenchA));
+//   
+//   Serial.print("Right  EncB: ");
+//   Serial.println(digitalRead(RenchB)); 
+//   Serial.println(" "); 
+//    
+//   Serial.print("Left EncA: ");
+//   Serial.println(digitalRead(LenchA));
+//   
+//   Serial.print("Left EncB: ");
+//   Serial.println(digitalRead(LenchB));
+//   Serial.println(" ");
+//   Serial.println(" ");
+//}
+//
+//void printSensors(){
+//  Serial.print("Time: "); 
+//  Serial.println(micros());
+//  Serial.print("IR left diag: ");
+//  Serial.println(leftSensor);
+//  Serial.print("IR right diag: "); 
+//  Serial.println(rightSensor); 
+//  Serial.print("IR left front: ");
+//  Serial.println(LFSensor);
+//  Serial.print("IR right front: "); 
+//  Serial.println(RFSensor);
+//  Serial.print("Offcenter: "); 
+//  Serial.println(RFSensor - LFSensor + 100); 
+//}
+//
+//void readDistance(){
+// Serial.print("Right encoder: "); 
+// Serial.println(R_encoder_val); 
+// Serial.print("Left encoder: "); 
+// Serial.println(L_encoder_val);  
 //}
 
