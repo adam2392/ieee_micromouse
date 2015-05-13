@@ -15,13 +15,9 @@ Pins Used:
 #include "Maze.c"
 #include "Maze.h"
 #include "Stack.c"
-<<<<<<< HEAD
 #include "Sensor.h"
 #include "Drive.h"
 #include <LedDisplay.h>
-=======
-
->>>>>>> 347c60d217f5adffbfc43ad98e1f58e1ce6f9999
 #include <avr/interrupt.h>
 //Define Driving Direction
 #define BACKWARD 0
@@ -51,21 +47,18 @@ Pins Used:
 //Speaker
 #define speakerPin 2
 
-<<<<<<< HEAD
 //LCD Display
 #define dataPin 12      //connect to displays data input
 #define registerSelect 1 //the display's register select pin
 
-
 ////// What are these?
-=======
->>>>>>> 347c60d217f5adffbfc43ad98e1f58e1ce6f9999
 #define ABOUT_FACE_COUNT 5000
 #define TURN_RIGHT_COUNT 2500
 #define TURN_LEFT_COUNT 2500
+
 #define ONECELL 6000
 
-
+int ran = 0; 
 // TODO: find the correct values for these variables by 
 // placing the mouse int he the middle of a maze path
 // and measuring the sensor readings 
@@ -75,11 +68,7 @@ int hasRightWall = 50;
 int errorP = 0;
 int errorD = 0; 
 int oldErrorP = 0; 
-<<<<<<< HEAD
 int newOffset = -80;     // what is this?
-=======
-int newOffset = -20; 
->>>>>>> 347c60d217f5adffbfc43ad98e1f58e1ce6f9999
 int rightBaseSpeed = 35; 
 int leftBaseSpeed = 31;
 
@@ -99,15 +88,12 @@ double D = 0.3;
 volatile int R_encoder_val = 0;  // declare encoder interrupt values
 volatile int L_encoder_val = 0;
 
-<<<<<<< HEAD
 const int numReadings = 500;
 
 int readings[numReadings];      // the readings from the analog input
 int smoothingIndex = 0;         // the index of the current reading
 int total = 0;                  // the running total
 int average = 0;                // the average
-=======
->>>>>>> 347c60d217f5adffbfc43ad98e1f58e1ce6f9999
 
 int inputPin = A0;
 
@@ -121,12 +107,7 @@ short direction; //direction that the mouse is facing
 short x, y; //current coordinates of the mouse in the maze
 short goal_x, goal_y; //goal coordinates once found
 
-boolean rightSeen = false; 
-boolean leftSeen  = false; 
-boolean rfSeen = false; 
-boolean lfSeen = false; 
 
-<<<<<<< HEAD
 // Sensor initializations
 Sensor sensor = Sensor(LF_Emitter, LF_Receiver, RF_Emitter, 
         RF_Receiver, SIDE_HIGH_POWER, SIDE_LOW_POWER,
@@ -145,19 +126,11 @@ const int L_fwd = 4, L_bkw = 3;  //L_fwd = 1 and L_bkw = 0 -> go forward on left
 
 Drive drive = Drive(R_fwd, R_bkw, L_fwd, L_bkw); 
 
-
-=======
-////////////////////////////
-///////// SETUP ////////////
-////////////////////////////
->>>>>>> 347c60d217f5adffbfc43ad98e1f58e1ce6f9999
-// the setup routine runs once when you press reset:
+// Setup: the setup routine runs once when you press reset:
 void setup()
 {
-
   Serial.begin(9600);     //initialize for serial output
 
-  
   // initialize left and right encoders
   pinMode(RenchA, INPUT); 
   pinMode(RenchB, INPUT);
@@ -195,7 +168,6 @@ void setup()
 
   //setup the speaker pin
   pinMode(speakerPin, OUTPUT);
-<<<<<<< HEAD
   ran = 0; 
 
   /// what are these for?
@@ -203,8 +175,6 @@ void setup()
     readings[thisReading] = 0;
   //rightForward(0); 
   //leftForward(0); 
-=======
->>>>>>> 347c60d217f5adffbfc43ad98e1f58e1ce6f9999
 
   /**maze solving setup**/
   my_maze = new_Maze(); //initialize new maze
@@ -214,86 +184,26 @@ void setup()
   direction = NORTH;
   found_dest = FALSE;
 }
-<<<<<<< HEAD
-=======
-///////////////////////////////////
-///////////////////////////////////
-///////////////////////////////////
 
-
-
->>>>>>> 347c60d217f5adffbfc43ad98e1f58e1ce6f9999
-
-//////////////////////////////////
-////////// LOOP //////////////////
-//////////////////////////////////
+// the loop routine runs over and over again forever:
 void loop()
 {
-<<<<<<< HEAD
   /*
   
   */
   //while the center destination hasn't been reached
   while(!found_dest){
      readSensor();                               // read sensors
-     visit_node(my_maze,my_stack,x,y,TRUE);
-     change_dir(my_maze,&x,&y,&direction);
+//     visit_node(my_maze,my_stack,x,y,TRUE);
+//     change_dir(my_maze,&x,&y,&direction);
      move_single_cell();                        // move a single cell forward
-     check_start_reached(&x,&y,&found_dest);    // check if destination has been reached
+//     check_start_reached(&x,&y,&found_dest);    // check if destination has been reached
   }
   
   //redo floodfill
-=======
- 
-  Serial.println("entered loop"); 
-  while( !leftSeen || !rightSeen ) {
-    readSensor(); 
-    if( leftSensor > 500 ) 
-      leftSeen = true; 
-    if( rightSensor > 500 )
-      rightSeen = true; 
-  }
- 
-  //pid(); 
-  
-  Serial.println("started"); 
-  // trip from start to goal 
-  while(!found_dest){
-    readSensor(); 
-    visit_node(my_maze, my_stack, x, y, FALSE);
-    change_dir(my_maze, &x, &y, &direction); //find the best direction to face based on flood values and turn to that direction
-    move_single_cell(); //move one cell in the new direction
-    delay(300); 
-    check_goal_reached(&x, &y, &found_dest);
-
-  }
-
-  goal_x = x;
-  goal_y = y;
-
-  // Read walls of Center Cells 
-  visit_node(my_maze, my_stack, x, y, FALSE);
-  set_center_walls(x, y);
-  delay(200);
-  reflood_from_goal();
-  found_dest = FALSE;
-  about_face();
-  
-  ///* trip from GOAL to START 
-  while(!found_dest){
-    readSensor(); 
-    visit_node(my_maze,my_stack,x,y,TRUE);
-    change_dir(my_maze,&x,&y,&direction);
-    move_single_cell();
-    check_start_reached(&x,&y,&found_dest);
-  } 
-  
-  delay(10); 
->>>>>>> 347c60d217f5adffbfc43ad98e1f58e1ce6f9999
   
   //speed runs?
 }
-<<<<<<< HEAD
 
 /*Function: pid
   Description: 
@@ -321,6 +231,9 @@ void pid( void ) {
     errorP = .1 * (rightSense - 80 );      // the error away from center with only a right wall
     errorD = errorP - oldErrorP;           // change in error
   }
+  // no walls detected except for in front
+  else { 
+  }
   
   //initialize motor speeds based on error, and what we set as the base speed
   int rightSpeed = rightBaseSpeed + totalError; 
@@ -344,104 +257,6 @@ void pid( void ) {
     rightSpeed = rightSpeed/2 -5 ; 
   if( leftSpeed > 50 || leftSpeed < -50 )
     leftSpeed = leftSpeed/2 - 5 ; 
-=======
-///////////////////////////////////
-///////////////////////////////////
-///////////////////////////////////
-
-
-
- 
-//////////////////////////////////
-///////// PID ////////////////////
-//////////////////////////////////
-void pid( void ) {
- 
-  readSensor(); 
-
-  int totalError; 
- 
-
-  if( leftSensor > hasLeftWall && rightSensor > hasRightWall ) {
-    //Serial.println("in the middle"); 
-    errorP = rightSensor - leftSensor - newOffset;  
-    errorD = errorP - oldErrorP;  
-  } 
-  else if( leftSensor > hasLeftWall ){
-    //Serial.println("only left wall"); 
-    errorP = .1 * ( 80 - leftSensor ); 
-    errorD = errorP - oldErrorP; 
-  }
-  else if( rightSensor > hasRightWall ){
-    //Serial.println("only right wall"); 
-    errorP = .1 * (rightSensor - 80 ); 
-    errorD = errorP - oldErrorP;  
-  }
-  else {
-    int value = R_encoder_val;
-    analogWrite(L_bkw, LOW);
-    analogWrite(R_bkw, LOW);
-    analogWrite(L_fwd, 70);
-    analogWrite(R_fwd, 70);
-    
-    while(R_encoder_val - value < ONECELL);
-    analogWrite(R_fwd, HIGH);
-    analogWrite(L_fwd, HIGH);
-    analogWrite(R_bkw, HIGH);
-    analogWrite(L_bkw, HIGH);
-  }
-  
-  totalError = P * errorP + D * errorD; 
-  oldErrorP = errorP; 
-
-  int rightSpeed = rightBaseSpeed + totalError; 
-  int leftSpeed = leftBaseSpeed - totalError; 
-  
-  // SPEED DUBUG
-  /*
-  Serial.print("Right speed: "); 
-  Serial.println(rightSpeed); 
-  Serial.print("Left speed: "); 
-  Serial.println(leftSpeed); 
-  */
-
-
-  if( rightSpeed > 50 || rightSpeed < -50 )
-    rightSpeed = rightSpeed/2 -5 ; 
-  if( leftSpeed > 50 || leftSpeed < -50 )
-    leftSpeed = leftSpeed/2 - 5 ; 
-  
-  /*
-  if(RFSensor > 550 || LFSensor > 550 ){
-    
-      //int encoder_number = L_encoder_val;
-      readSensor(); 
-      
-      analogWrite(R_fwd, LOW);
-      analogWrite(L_fwd, LOW);
-      analogWrite(R_bkw, LOW);
-      analogWrite(L_bkw, LOW);
-      
-      //delay(1000);
-      Serial.println("turningiasdfopnasdf"); 
-      analogWrite(L_fwd, leftBaseSpeed);
-      
-      analogWrite(R_bkw, rightBaseSpeed);
-      while( RFSensor > 550 || LFSensor > 550 ){
-        readSensor(); 
-      }
-      
-    
-      analogWrite(L_fwd, LOW);
-      analogWrite(R_bkw, LOW);
-      
-    rightSpeed = 0; 
-    leftSpeed = 0;  
-  }
-  */
-  rightForward( rightSpeed ); 
-  leftForward(leftSpeed ); 
->>>>>>> 347c60d217f5adffbfc43ad98e1f58e1ce6f9999
   
   // move right/left motor forward
   drive.rightForward(rightSpeed); 
@@ -449,7 +264,6 @@ void pid( void ) {
   
   Serial.println("Reach end of PID....!!!"); 
 }
-<<<<<<< HEAD
 
 /*Function: readSensor
   Description: Read in left-front, right-front and the right/left sensors
@@ -500,721 +314,19 @@ void right_interrupt()
 }
 
 
-//This is just for debugging, **** not using....
-void readSensors(){
-  Serial.print("Time: "); 
-  Serial.println(time++);
-  Serial.print("IR left diag: ");
-  Serial.println(readLeft());
-  Serial.print("IR right diag: "); 
-  Serial.println(readRight()); 
-  Serial.print("IR left front: ");
-  Serial.println(readLeftFront());
-  Serial.print("IR right front: "); 
-  Serial.println(readRightFront());
-}
-void readEnc(){
-=======
-///////////////////////////////////
-///////////////////////////////////
-///////////////////////////////////
-
-
-
-
-
-///////////////////////////////
-///// READ SENSOR /////////////
-///////////////////////////////
-void readSensor(void) {
-
-  int curt = micros();//record the current time
-  
-  writeLeftFront();//this is not sudo code, this is macro I defined somewhere else
-  
-  while((micros()-curt)<60);//use up time until 60us from where we record curt
-  
-  LFSensor =readLeftFront(); 
-  
-  stopLeftFront();//turn off emitter right after receive   r done ADC converting
-  
-  //do linear regression here for left front sensor if you plan to linearize your sensor
-  
-  while((micros()-curt)<140);//140-60=80us,wait 80us until reflection is gone
-  
-  writeRightFront();
-  
-  while((micros()-curt)<200);//200-140=60us, turn on emitter for 60us
->>>>>>> 347c60d217f5adffbfc43ad98e1f58e1ce6f9999
-  
-  RFSensor=readRightFront();
-  
-  stopRightFront(); 
-  
-  //do linear regression here for right front sensor if you plan to linearize your sensor
-  
-  while((micros()-curt)<280);//280-200=80us
-  
-  writeSides();//turn on side emitters for side sensors
-  
-  while((micros()-curt)<340);//340-280=60us
-    
-  leftSensor  = readLeft(); 
-  
-  rightSensor = readRight(); 
-  
-  stopSides(); 
-  
-  //do linear regression here for side sensors if you plan to linearize your sensors
-
-}
-///////////////////////////////////
-///////////////////////////////////
-///////////////////////////////////
-
-
-
-
-///////////////////////////////////////
-/////// BASIC MOVEMENT ////////////////
-//// ABOUT FACE, TURN, SINGLE CELL ////
-///////////////////////////////////////
-
-/// ABOUT FACE
-void about_face(){
-  
-  delay(200); 
-  int value = R_encoder_val;
-	
-  analogWrite(L_fwd, LOW);
-  analogWrite(L_bkw, 70);
-  analogWrite(R_fwd, 70);
-  analogWrite(R_bkw, LOW);
-	
-  while(R_encoder_val - value < ABOUT_FACE_COUNT);  // *********increase value to turn more***********
-	
-  analogWrite(L_bkw, LOW);
-  analogWrite(R_fwd, LOW);
-  R_encoder_val = 0;
-  L_encoder_val = 0;
-
-}
-
-///// TURN LEFT
-void turn_left() // point turn
-{
-  int encoder_number = L_encoder_val;
-  
-  analogWrite(R_fwd, LOW);
-  analogWrite(L_fwd, LOW);
-  analogWrite(R_bkw, LOW);
-  analogWrite(L_bkw, LOW);
-  
-  //delay(1000);  // decrease delay if mouse pauses too much, increase it if the mouse tries to turn
-  	       // before slowing down enough (same thing in turn_right)
-  
-  analogWrite(R_fwd, 70);
-  
-  analogWrite(L_bkw, 70); 
-  
-  //delay(400);
-  while(L_encoder_val - encoder_number < TURN_LEFT_COUNT );  // tune this value for complete turn ************* ///////////////////
-
-  analogWrite(R_fwd, LOW);
-  analogWrite(L_bkw, LOW);
-  R_encoder_val = 0;
-  L_encoder_val = 0;
-}
-
-
-//// TURN RIGHT
-void turn_right()  // point turn
-{
-  int encoder_number = L_encoder_val;
-  
-  analogWrite(R_fwd, LOW);
-  analogWrite(L_fwd, LOW);
-  analogWrite(R_bkw, LOW);
-  analogWrite(L_bkw, LOW);
-  
-  //delay(1000);
-  
-  analogWrite(L_fwd, 70);
-  
-  analogWrite(R_bkw, 70);
-  
-  while(L_encoder_val - encoder_number < TURN_RIGHT_COUNT);
-  //delay(400);  // tune this value for complete turn ******* ///////////////////
-
-<<<<<<< HEAD
-void move_single_cell() {
-  keep_moving = true;  //
-  R_encoder_val = 0;
-  L_encoder_val = 0;
-  do {
-   Serial.println("Moving single cell!!!!!!\n");
-   readSensor();  //read sensors 
-   pid(); //call PID
-   
-   if (L_encoder_val >= ONECELL) {
-     keep_moving = false;
-    
-    //stop fucntions
-     analogWrite(R_fwd, HIGH);
-     analogWrite(L_fwd, HIGH);
-     analogWrite(R_bkw, HIGH);
-     analogWrite(L_bkw, HIGH);
-     return;
-   }
-  } while(keep_moving);
- 
-  
-}
-
-void drive_test(){
-  int leftDistance = readLeft(); 
-  
-  if(leftDistance > 80) {
-    leftBackward(30); 
-    rightBackward(30); 
-  }  
-  else if( leftDistance < 70 ) {
-    rightForward(30); 
-    leftForward(30);  
-  }
-  
-}
-
-void printSensors(){
-  Serial.print("Time: "); 
-  Serial.println(micros());
-  Serial.print("IR left diag: ");
-  Serial.println(leftSensor);
-  Serial.print("IR right diag: "); 
-  Serial.println(rightSensor); 
-  Serial.print("IR left front: ");
-  Serial.println(LFSensor);
-  Serial.print("IR right front: "); 
-  Serial.println(RFSensor);
-  Serial.print("Offcenter: "); 
-  Serial.println(RFSensor - LFSensor + 100); 
-}
-
-void readDistance(){
- Serial.print("Right encoder: "); 
- Serial.println(R_encoder_val); 
- Serial.print("Left encoder: "); 
- Serial.println(L_encoder_val);  
-}
-=======
-  analogWrite(L_fwd, LOW);
-  analogWrite(R_bkw, LOW);
-  R_encoder_val = 0;
-  L_encoder_val = 0;
-}
-
-//// MOVE SINGLE CELL 
-void move_single_cell() {
-  
-  //analogWrite(R_fwd, LOW);
-  //analogWrite(L_fwd, LOW);
-  //analogWrite(R_bkw, LOW);
-  //analogWrite(L_bkw, LOW );
-  keep_moving = true;
-  do {
-    readSensor(); 
-    pid(); 
-    delay(10); 
-   //rightForward(70); 
-   //leftForward(70); 
-   if (L_encoder_val >= ONECELL) {
-   
-     keep_moving = false;
-     R_encoder_val = 0;
-     L_encoder_val = 0;
-  analogWrite(R_fwd, HIGH);
-  analogWrite(L_fwd, HIGH);
-  analogWrite(R_bkw, HIGH);
-  analogWrite(L_bkw, HIGH);
-  return; 
-   }
-  } while(keep_moving);
- 
-}
-///////////////////////////////////
-///////////////////////////////////
-///////////////////////////////////
-
-
->>>>>>> 347c60d217f5adffbfc43ad98e1f58e1ce6f9999
-
-
-//////////////////////////////////
-//////// FLOOD FILL //////////////
-//////////////////////////////////
-/** Function: change_dir
- * Parameters: this_maze - the maze with flood values
- * x,y - current mouse coordinates
- * dir - current direction mouse is facing.
- * Description: makes the mouse face new direction. updates the new coordinates of the mouse.
- */
-void change_dir ( Maze * this_maze, short * x, short * y, short * dir){
-
-  Node * this_node;
-  short next_dir;//new direction to face
-
-  this_node = this_maze->map[(*x)][(*y)];
-  next_dir = get_smallest_neighbor_dir(this_node, *dir);
-
-  /* update the appropriate location value x or y */
-  if (next_dir == NORTH) 
-    (*x) = (*x) - 1;
-  else if (next_dir == EAST) 
-    (*y) = (*y) + 1;
-  else if (next_dir == SOUTH) 
-    (*x) = (*x) + 1;
-  else if (next_dir == WEST) 
-    (*y) = (*y) - 1;
-  Serial.println(next_dir); 
-  // Turn the actual mouse 
-  if (*dir == NORTH) {
-    Serial.println("North detected"); 
-    if (next_dir == WEST){
-      Serial.println("turning left"); 
-      turn_left();
-    }
-    else if (next_dir == EAST){
-      Serial.println("turning right"); 
-      turn_right();
-    }
-    else if (next_dir == SOUTH){
-      Serial.println("turning around"); 
-      about_face();
-    }
-  }
-
-  else if (*dir == EAST) {
-    Serial.println("East detected"); 
-    if (next_dir == NORTH)
-      turn_left();
-    else if (next_dir == SOUTH)
-      turn_right();
-    else if (next_dir == WEST)
-      about_face();
-  }
-
-  else if (*dir == SOUTH) {
-    Serial.println("Sout detected");
-    if (next_dir == EAST)
-      turn_left();
-    else if (next_dir == WEST)
-      turn_right();
-    else if (next_dir == NORTH)
-      about_face();
-  }
-
-  else if (*dir == WEST) {
-    Serial.println("West detected");
-    if (next_dir == SOUTH)
-      turn_left();
-    else if (next_dir == NORTH)
-      turn_right();
-    else if (next_dir == EAST)
-      about_face();
-  }
-
-  /* update the direction */
-  (*dir) = next_dir;
-
-
-}//end change_dir
-
-
-
-
-short check_left_wall() {
-  readSensor(); 
-  if (leftSensor > LEFT_WALL_SENSED)//need to adjust value
-    return TRUE;
-
-  return FALSE;
-}
-
-short check_right_wall() {
-  readSensor(); 
-  if (rightSensor > RIGHT_WALL_SENSED)//need to adjust value  
-    return TRUE;
-
-  return FALSE;
-}
-
-short check_front_wall() {
-  readSensor(); 
-  if (LFSensor > FRONT_WALL_SENSED && RFSensor > FRONT_WALL_SENSED)
-    return TRUE;
-
-  return FALSE;
-}
-
-
-
-/** Function: visit_node
- * Parameters: this_maze - maze with flood values
- * this_stack - stack for flood fill
- * x,y - coordinates to be visited
- * flag - whether to update goal cells or not
- * Description: visits the cell, checks for walls, and updates flood values
- */
-void visit_node(Maze * this_maze, Stack * this_stack, short x, short y, short flag) {
-
-  Node * this_node;
-  short wall_on_left, wall_on_front, wall_on_right;
-  short northwall, eastwall, southwall, westwall;
-
-  this_node = this_maze->map[x][y];
-  wall_on_left = wall_on_front = wall_on_right = FALSE;
-  northwall = eastwall = southwall = westwall = FALSE;
-
-  // read walls and set
-  // read left
-  wall_on_left = check_left_wall();
-  wall_on_front = check_front_wall();
-  wall_on_right = check_right_wall();  
-
-
-  if (direction == NORTH) {
-
-    if (wall_on_left) {
-      set_wall(this_node, WEST);
-      westwall = TRUE; 
-    }
-    if (wall_on_front) {
-      set_wall(this_node, NORTH);
-      northwall = TRUE;
-    }
-    if (wall_on_right) {
-      set_wall(this_node, EAST); 
-      eastwall = TRUE;
-    }  
-  }
-  else if (direction == EAST){
-
-    if (wall_on_left) {
-      set_wall(this_node, NORTH);
-      northwall = TRUE; 
-    }
-    if (wall_on_front) {
-      set_wall(this_node, EAST);
-      eastwall = TRUE;
-    }
-    if (wall_on_right) {
-      set_wall(this_node, SOUTH);
-      southwall = TRUE;
-    }
-  }
-  else if (direction == SOUTH) {
-
-    if (wall_on_left) {
-      set_wall(this_node, EAST);
-      eastwall = TRUE; 
-    }
-    if (wall_on_front) {
-      set_wall(this_node, SOUTH);
-      southwall = TRUE;
-    }
-    if (wall_on_right) {
-      set_wall(this_node, WEST); 
-      westwall = TRUE;
-    }
-  }
-  else {
-
-    if (wall_on_left) {
-      set_wall(this_node, SOUTH);
-      southwall = TRUE; 
-    }
-    if (wall_on_front) {
-      set_wall(this_node, WEST);
-      westwall = TRUE;
-    }
-    if (wall_on_right) {
-      set_wall(this_node, NORTH); 
-      northwall = TRUE;
-    }
-  }
-
-  if (northwall) {
-    if (this_node->row != 0)
-      push (this_stack, MAP[ROW-1][COL]);
-    set_wall(this_node, NORTH);
-  }
-  if (eastwall) {
-    if (this_node->column != SIZE-1)
-      push (this_stack, MAP[ROW][COL+1]);
-    set_wall(this_node, EAST);
-  }
-  if (southwall) {
-    if (this_node->row != SIZE-1)
-      push (this_stack, MAP[ROW+1][COL]);
-    set_wall(this_node, SOUTH);
-  }
-  if (westwall) {
-    if (this_node->column != 0)
-      push (this_stack, MAP[ROW][COL-1]);
-    set_wall(this_node, WEST);
-  }
-
-  /* push this node itself, as it was updated */
-  push(this_stack, this_node);
-
-  /* pop until the stack is empty, and call flood_fill on that node */
-  while (!is_empty_Stack(this_stack)) {
-    pop(this_stack, &this_node);
-    /* NOTE: the flag parameter determines wheter to update goal cells or not */
-    flood_fill(this_node, this_stack, flag);
-  }
-
-  set_visited (this_node);
-}//end visit_node
-
-/** Function: check_goal_reached
- * Parameters: x,y - coordinate to be checked
- * found_goal - flag if goal cell was found or not
- * Description: updates flag for whether goal cell was reached
- */
-void check_goal_reached (short * x, short * y, short * found_goal) {
-
-  if (*x == SIZE / 2 || *x == SIZE / 2 - 1) {
-    if (*y == SIZE / 2 || *y == SIZE / 2 - 1) {
-      *(found_goal) = TRUE;
-    }
-  }
-}
-/* update flag for whether goal cell was reached */
-void check_start_reached (short * x, short * y, short * found_start) {
-
-  if (*x == START_X && *y == START_Y) {
-    *(found_start) = TRUE;
-    //printf("Start Coorinates Reached: %d, %d\n", *x, *y);
-  }
-}
-
-
-/**Function: set_center_walls
-   Description: fills in the wall values of the centers based on where
-                you discovered the goal from.
-*/
-void set_center_walls(short entered_x, short entered_y) {
-
-  // 8, 8 : NORTH or WEST
-  if (entered_x == SIZE/2 && entered_y == SIZE/2) {
-
-    set_wall(my_maze->map[SIZE/2 - 1][SIZE/2 - 1], NORTH);
-    set_wall(my_maze->map[SIZE/2 - 1][SIZE/2 - 1], WEST);
-    set_wall(my_maze->map[SIZE/2 - 1][SIZE/2],     NORTH);
-    set_wall(my_maze->map[SIZE/2 - 1][SIZE/2],     EAST);
-    set_wall(my_maze->map[SIZE/2][SIZE/2 - 1], SOUTH);
-    set_wall(my_maze->map[SIZE/2][SIZE/2 - 1], WEST);
-  }
-
-  // 8, 7 : NORTH or EAST
-  if (entered_x == SIZE/2 && entered_y == SIZE/2 - 1) {
-
-    set_wall(my_maze->map[SIZE/2 - 1][SIZE/2 - 1], NORTH);
-    set_wall(my_maze->map[SIZE/2 - 1][SIZE/2 - 1], WEST);
-    set_wall(my_maze->map[SIZE/2 - 1][SIZE/2],     NORTH);
-    set_wall(my_maze->map[SIZE/2 - 1][SIZE/2],     EAST);
-    set_wall(my_maze->map[SIZE/2][SIZE/2], SOUTH);
-    set_wall(my_maze->map[SIZE/2][SIZE/2], EAST);
-  }
-
-  // 7, 7 : SOUTH or EAST
-  if (entered_x == SIZE/2 - 1 && entered_y == SIZE/2 - 1) {
-
-    set_wall(my_maze->map[SIZE/2][SIZE/2 - 1], SOUTH);
-    set_wall(my_maze->map[SIZE/2][SIZE/2 - 1], WEST);
-    set_wall(my_maze->map[SIZE/2 - 1][SIZE/2],     NORTH);
-    set_wall(my_maze->map[SIZE/2 - 1][SIZE/2],     EAST);
-    set_wall(my_maze->map[SIZE/2][SIZE/2], SOUTH);
-    set_wall(my_maze->map[SIZE/2][SIZE/2], EAST);
-  }
-
-
-  // 7, 8 : SOUTH or WEST
-  if (entered_x == SIZE/2 - 1 && entered_y == SIZE/2) {
-
-    set_wall(my_maze->map[SIZE/2][SIZE/2 - 1], SOUTH);
-    set_wall(my_maze->map[SIZE/2][SIZE/2 - 1], WEST);
-    set_wall(my_maze->map[SIZE/2 - 1][SIZE/2 - 1], NORTH);
-    set_wall(my_maze->map[SIZE/2 - 1][SIZE/2 - 1], WEST);
-    set_wall(my_maze->map[SIZE/2][SIZE/2], SOUTH);
-    set_wall(my_maze->map[SIZE/2][SIZE/2], EAST);
-  }
-
-}
-
-/** Function: reflood_from_goal
-    Description: Resets all the flood values so that the goal is now the start without modifying wall values.
-*/
-
-void reflood_from_goal() {
- 
-  for (int i = 0; i < SIZE; i++) 
-      for (int j = 0; j < SIZE; j++)
-        my_maze->map[i][j]->floodval = LARGEVAL;
-      
-    // set the start value to zero 
-    set_value(my_maze->map[START_X][START_Y], 0);
-
-    /* push the neighbors of start cell to stack 
-       then pop everything until all cells updated*/
-    push_open_neighbors(my_maze->map[START_X][START_Y], my_stack);
-    while(!is_empty_Stack(my_stack)) {
-      pop(my_stack, &temp);
-      if (!(temp->row == 15 && temp->column == 0))
-        flood_fill(temp, my_stack, TRUE);
-    }
-  
-}
-///////////////////////////////////
-///////////////////////////////////
-///////////////////////////////////
-
-
-
-
-
-////////////////////////////   
-/// ENCODER INTERRUPTS /////
-////////////////////////////
-void left_interrupt(){ 
-  ++L_encoder_val;
-}
-
-void right_interrupt(){ 
-  ++R_encoder_val; 
-}
-///////////////////////////////////
-///////////////////////////////////
-///////////////////////////////////
-
-
-
-///////////////////////////////
-/////// READ RECEIVERS ////////
-///////////////////////////////
-
-int readLeft(){
-  return analogRead(L_Receiver);
-}
-int readRight(){
-  return analogRead(R_Receiver);
-}
-int readLeftFront(){
-  return analogRead(LF_Receiver);
-}
-int readRightFront(){
-  return analogRead(RF_Receiver);
-}
-
-////////////////////////////////
-////////////////////////////////
-/////////////////////////////////
-
-
-
-
-///////////////////////////////
-///// WRITE EMITTERS //////////
-///////////////////////////////
-
-void writeSides(){
-  digitalWrite(SIDE_HIGH_POWER, HIGH);
-}
-void writeSidesLow(){
-  digitalWrite(SIDE_LOW_POWER, HIGH);
-}
-void writeLeftFront(){
-  digitalWrite(LF_Emitter, HIGH);
-}
-void writeRightFront(){
-  digitalWrite(RF_Emitter, HIGH);
-}
-void stopLeftFront(){
-  digitalWrite(LF_Emitter, LOW);  
-}
-void stopRightFront(){
-  digitalWrite(RF_Emitter, LOW );  
-}
-void stopSides(){
-  digitalWrite(SIDE_HIGH_POWER, LOW );  
-}
-///////////////////////////////////
-///////////////////////////////////
-///////////////////////////////////
-
-
-
-
-
-///////////////////////////
-////// DRIVING ////////////
-///////////////////////////
-void leftForward(int pwmvalue){
-  //digital write for testing/debugging
-  analogWrite(L_fwd, pwmvalue);
-  analogWrite(L_bkw, LOW);
-}
-void rightForward(int pwmvalue){
-  //digital write for testing/debugging
-  analogWrite(R_fwd, pwmvalue);
-  analogWrite(R_bkw, LOW);
-}
-void leftBackward(int pwmvalue){
-  analogWrite(L_fwd, LOW);
-  analogWrite(L_bkw, pwmvalue);
-}
-void rightBackward(int pwmvalue){
-  analogWrite(R_fwd, LOW);
-  analogWrite(R_bkw, pwmvalue);  
-}
-///////////////////////////////////
-///////////////////////////////////
-///////////////////////////////////
-
-
-
-
-///////////////////
-///// DEBUG ///////
-///////////////////
-void printSensors(){
-  Serial.print("Time: "); 
-  Serial.println(micros());
-  Serial.print("IR left diag: ");
-  Serial.println(leftSensor);
-  Serial.print("IR right diag: "); 
-  Serial.println(rightSensor); 
-  Serial.print("IR left front: ");
-  Serial.println(LFSensor);
-  Serial.print("IR right front: "); 
-  Serial.println(RFSensor);
-  Serial.print("Offcenter: "); 
-  Serial.println(RFSensor - LFSensor + 100); 
-}
-
-void readSensors(){
-  Serial.print("Time: "); 
-  Serial.println(time++);
-  Serial.print("IR left diag: ");
-  Serial.println(readLeft());
-  Serial.print("IR right diag: "); 
-  Serial.println(readRight()); 
-  Serial.print("IR left front: ");
-  Serial.println(readLeftFront());
-  Serial.print("IR right front: "); 
-  Serial.println(readRightFront());
-}
+////This is just for debugging, **** not using....
+//void readSensors(){
+//  Serial.print("Time: "); 
+//  Serial.println(time++);
+//  Serial.print("IR left diag: ");
+//  Serial.println(readLeft());
+//  Serial.print("IR right diag: "); 
+//  Serial.println(readRight()); 
+//  Serial.print("IR left front: ");
+//  Serial.println(readLeftFront());
+//  Serial.print("IR right front: "); 
+//  Serial.println(readRightFront());
+//}
 void readEnc(){
   
    //rightenc = analogRead(RenchA); 
@@ -1249,81 +361,449 @@ void readEnc(){
    
 }
 
+
+void about_face()  // because, why not?
+{
+  delay(2000); 
+     
+	int value = R_encoder_val;
+	
+	analogWrite(L_fwd, LOW);
+	analogWrite(L_bkw, 70);
+	analogWrite(R_fwd, 70);
+	analogWrite(R_bkw, LOW);
+
+	
+	
+	while(R_encoder_val - value < ABOUT_FACE_COUNT);  // *********increase value to turn more***********
+	
+	analogWrite(L_bkw, LOW);
+	analogWrite(R_fwd, LOW);
+        R_encoder_val = 0;
+        L_encoder_val = 0;
+     
+  
+}
+
+
+void turn_left() // point turn
+{
+  int encoder_number = L_encoder_val;
+  
+  analogWrite(R_fwd, LOW);
+  analogWrite(L_fwd, LOW);
+  analogWrite(R_bkw, LOW);
+  analogWrite(L_bkw, LOW);
+  
+  delay(1000);  // decrease delay if mouse pauses too much, increase it if the mouse tries to turn
+  	       // before slowing down enough (same thing in turn_right)
+  
+  analogWrite(R_fwd, 70);
+  
+  analogWrite(L_bkw, 70); 
+  
+  //delay(400);
+  while(L_encoder_val - encoder_number < TURN_LEFT_COUNT );  // tune this value for complete turn ************* ///////////////////
+
+  analogWrite(R_fwd, LOW);
+  analogWrite(L_bkw, LOW);
+  R_encoder_val = 0;
+  L_encoder_val = 0;
+}
+
+void turn_right()  // point turn
+{
+  int encoder_number = L_encoder_val;
+  
+  analogWrite(R_fwd, LOW);
+  analogWrite(L_fwd, LOW);
+  analogWrite(R_bkw, LOW);
+  analogWrite(L_bkw, LOW);
+  
+  delay(1000);
+  
+  analogWrite(L_fwd, 70);
+  
+  analogWrite(R_bkw, 70);
+  
+  while(L_encoder_val - encoder_number < TURN_RIGHT_COUNT);
+  //delay(400);  // tune this value for complete turn ******* ///////////////////
+
+  analogWrite(L_fwd, LOW);
+  analogWrite(R_bkw, LOW);
+  R_encoder_val = 0;
+  L_encoder_val = 0;
+}
+
+
+void move_single_cell() {
+  keep_moving = true;  //
+  R_encoder_val = 0;
+  L_encoder_val = 0;
+  do {
+   Serial.println("Moving single cell!!!!!!\n");
+   readSensor();  //read sensors 
+   pid(); //call PID
+   
+   if (L_encoder_val >= ONECELL) {
+     keep_moving = false;
+    
+    //stop fucntions
+     analogWrite(R_fwd, HIGH);
+     analogWrite(L_fwd, HIGH);
+     analogWrite(R_bkw, HIGH);
+     analogWrite(L_bkw, HIGH);
+     return;
+   }
+  } while(keep_moving);
+ 
+  
+}
+
+//void drive_test(){
+//  int leftDistance = readLeft(); 
+//  
+//  if(leftDistance > 80) {
+//    leftBackward(30); 
+//    rightBackward(30); 
+//  }  
+//  else if( leftDistance < 70 ) {
+//    rightForward(30); 
+//    leftForward(30);  
+//  }
+//  
+//}
+
+void printSensors(){
+  Serial.print("Time: "); 
+  Serial.println(micros());
+  Serial.print("IR left diag: ");
+  Serial.println(leftSensor);
+  Serial.print("IR right diag: "); 
+  Serial.println(rightSensor); 
+  Serial.print("IR left front: ");
+  Serial.println(LFSensor);
+  Serial.print("IR right front: "); 
+  Serial.println(RFSensor);
+  Serial.print("Offcenter: "); 
+  Serial.println(RFSensor - LFSensor + 100); 
+}
+
 void readDistance(){
  Serial.print("Right encoder: "); 
  Serial.println(R_encoder_val); 
  Serial.print("Left encoder: "); 
  Serial.println(L_encoder_val);  
-  
 }
 
 
+/** Function: change_dir
+ * Parameters: this_maze - the maze with flood values
+ * x,y - current mouse coordinates
+ * dir - current direction mouse is facing.
+ * Description: makes the mouse face new direction. updates the new coordinates of the mouse.
+ */
+void change_dir ( Maze * this_maze, short * x, short * y, short * dir){
+
+  Node * this_node;
+  short next_dir;//new direction to face
+
+  this_node = this_maze->map[(*x)][(*y)];
+  next_dir = get_smallest_neighbor_dir(this_node, *dir);
+
+  /* update the appropriate location value x or y */
+  if (next_dir == NORTH) 
+    (*x) = (*x) - 1;
+  else if (next_dir == EAST) 
+    (*y) = (*y) + 1;
+  else if (next_dir == SOUTH) 
+    (*x) = (*x) + 1;
+  else if (next_dir == WEST) 
+    (*y) = (*y) - 1;
+
+  // Turn the actual mouse 
+  if (*dir == NORTH) {
+    if (next_dir == WEST)
+      turn_left();
+    else if (next_dir == EAST)
+      turn_right();
+    else if (next_dir == SOUTH)
+      about_face();
+  }
+
+  else if (*dir == EAST) {
+    if (next_dir == NORTH)
+      turn_left();
+    else if (next_dir == SOUTH)
+      turn_right();
+    else if (next_dir == WEST)
+      about_face();
+  }
+
+  else if (*dir == SOUTH) {
+    if (next_dir == EAST)
+      turn_left();
+    else if (next_dir == WEST)
+      turn_right();
+    else if (next_dir == NORTH)
+      about_face();
+  }
+
+  else if (*dir == WEST) {
+    if (next_dir == SOUTH)
+      turn_left();
+    else if (next_dir == NORTH)
+      turn_right();
+    else if (next_dir == EAST)
+      about_face();
+  }
+
+  /* update the direction */
+  (*dir) = next_dir;
+
+
+}//end change_dir
+
+
+//short check_left_wall() {
+//  if (readLeft() > LEFT_WALL_SENSED)//need to adjust value
+//    return TRUE;
+//
+//  return FALSE;
+//}
+
+//short check_right_wall() {
+//  if (readRight() > RIGHT_WALL_SENSED)//need to adjust value  
+//    return TRUE;
+//
+//  return FALSE;
+//}
+//
+//short check_front_wall() {
+//  if (readLeftFront() > FRONT_WALL_SENSED && readRightFront() > FRONT_WALL_SENSED)
+//    return TRUE;
+//
+//  return FALSE;
+//}
 
 
 
-/**** PID TEST ****/
-/*
-void drive_straight_PID(void){
-  int offset = 80;
-  static int previous_error = 0;
-  static int previous_time = 0;
-  static int last_big = 0;
-  int error; //current error values
-  int biggest;
-  int current_time; //current time
-  double total;
-  int leftDiagSensor, rightDiagSensor;
-  double kp = 0.5, kd = 0.5;
-  leftDiagSensor = leftSensor;
-  rightDiagSensor = rightSensor;
-  //debug print out sensor readings
-  //Serial.print("IR left diag: ");
-  //Serial.print(leftDiagSensor);
-  //Serial.print(" IR right diag: ");
-  //Serial.print(rightDiagSensor);
-  
-  if(!previous_time)
-  {
-    previous_time = millis();
-    return;
-  }
-  leftDiagSensor = leftSensor;
-  rightDiagSensor = rightSensor;
-  if( 1 )//temporarily for walls on both sides only |x|
-  {
-    error = rightDiagSensor - leftDiagSensor + offset;
-  }
-  total = error *kp;
-  previous_time = current_time;
-  
-  //analogWrite(R_fwd, HIGH - total);
-  //analogWrite(L_fwd, HIGH + total);
-  //what the PID will do (because motor functions are not done)
-  if(total > 25)
-    total=0.5*total; 
-  if(total > 50 )
-    total = 0; 
-  if(total<-50)
-    total=0;
-  Serial.print("total error: "); 
-  Serial.println(total); 
-  rightForward(rightBaseSpeed+total); 
-  leftForward(leftBaseSpeed-total); 
-  
-  if( error == 0 ){
-    Serial.print(" Mouse is straight: ");
-    Serial.println(error);
-     
-  }
-  if( error > 0 ){
-    Serial.print(" Mouse is veering right: ");
-    Serial.println(error);
-    
-  }
-  if( error < 0 ){
-    Serial.print(" Mouse is veering left: ");
-    Serial.println(error);
-  }
-}//end drive_straight_PID
-*/
+/** Function: visit_node
+ * Parameters: this_maze - maze with flood values
+ * this_stack - stack for flood fill
+ * x,y - coordinates to be visited
+ * flag - whether to update goal cells or not
+ * Description: visits the cell, checks for walls, and updates flood values
+ */
+//void visit_node(Maze * this_maze, Stack * this_stack, short x, short y, short flag) {
+//
+//  Node * this_node;
+//  short wall_on_left, wall_on_front, wall_on_right;
+//  short northwall, eastwall, southwall, westwall;
+//
+//  this_node = this_maze->map[x][y];
+//  wall_on_left = wall_on_front = wall_on_right = FALSE;
+//  northwall = eastwall = southwall = westwall = FALSE;
+//
+//  // read walls and set
+//  // read left
+//  wall_on_left = check_left_wall();
+//  wall_on_front = check_front_wall();
+//  wall_on_right = check_right_wall();  
+//
+//
+//  if (direction == NORTH) {
+//
+//    if (wall_on_left) {
+//      set_wall(this_node, WEST);
+//      westwall = TRUE; 
+//    }
+//    if (wall_on_front) {
+//      set_wall(this_node, NORTH);
+//      northwall = TRUE;
+//    }
+//    if (wall_on_right) {
+//      set_wall(this_node, EAST); 
+//      eastwall = TRUE;
+//    }  
+//  }
+//  else if (direction == EAST){
+//
+//    if (wall_on_left) {
+//      set_wall(this_node, NORTH);
+//      northwall = TRUE; 
+//    }
+//    if (wall_on_front) {
+//      set_wall(this_node, EAST);
+//      eastwall = TRUE;
+//    }
+//    if (wall_on_right) {
+//      set_wall(this_node, SOUTH);
+//      southwall = TRUE;
+//    }
+//  }
+//  else if (direction == SOUTH) {
+//
+//    if (wall_on_left) {
+//      set_wall(this_node, EAST);
+//      eastwall = TRUE; 
+//    }
+//    if (wall_on_front) {
+//      set_wall(this_node, SOUTH);
+//      southwall = TRUE;
+//    }
+//    if (wall_on_right) {
+//      set_wall(this_node, WEST); 
+//      westwall = TRUE;
+//    }
+//  }
+//  else {
+//
+//    if (wall_on_left) {
+//      set_wall(this_node, SOUTH);
+//      southwall = TRUE; 
+//    }
+//    if (wall_on_front) {
+//      set_wall(this_node, WEST);
+//      westwall = TRUE;
+//    }
+//    if (wall_on_right) {
+//      set_wall(this_node, NORTH); 
+//      northwall = TRUE;
+//    }
+//  }
+//
+//  if (northwall) {
+//    if (this_node->row != 0)
+//      push (this_stack, MAP[ROW-1][COL]);
+//    set_wall(this_node, NORTH);
+//  }
+//  if (eastwall) {
+//    if (this_node->column != SIZE-1)
+//      push (this_stack, MAP[ROW][COL+1]);
+//    set_wall(this_node, EAST);
+//  }
+//  if (southwall) {
+//    if (this_node->row != SIZE-1)
+//      push (this_stack, MAP[ROW+1][COL]);
+//    set_wall(this_node, SOUTH);
+//  }
+//  if (westwall) {
+//    if (this_node->column != 0)
+//      push (this_stack, MAP[ROW][COL-1]);
+//    set_wall(this_node, WEST);
+//  }
+//
+//  /* push this node itself, as it was updated */
+//  push(this_stack, this_node);
+//
+//  /* pop until the stack is empty, and call flood_fill on that node */
+//  while (!is_empty_Stack(this_stack)) {
+//    pop(this_stack, &this_node);
+//    /* NOTE: the flag parameter determines wheter to update goal cells or not */
+//    flood_fill(this_node, this_stack, flag);
+//  }
+//
+//  set_visited (this_node);
+//}//end visit_node
+//
+///** Function: check_goal_reached
+// * Parameters: x,y - coordinate to be checked
+// * found_goal - flag if goal cell was found or not
+// * Description: updates flag for whether goal cell was reached
+// */
+//void check_goal_reached (short * x, short * y, short * found_goal) {
+//
+//  if (*x == SIZE / 2 || *x == SIZE / 2 - 1) {
+//    if (*y == SIZE / 2 || *y == SIZE / 2 - 1) {
+//      *(found_goal) = TRUE;
+//    }
+//  }
+//}
+///* update flag for whether goal cell was reached */
+//void check_start_reached (short * x, short * y, short * found_start) {
+//
+//  if (*x == START_X && *y == START_Y) {
+//    *(found_start) = TRUE;
+//    //printf("Start Coorinates Reached: %d, %d\n", *x, *y);
+//  }
+//}
+//
+//
+///**Function: set_center_walls
+//   Description: fills in the wall values of the centers based on where
+//                you discovered the goal from.
+//*/
+//void set_center_walls(short entered_x, short entered_y) {
+//
+//  // 8, 8 : NORTH or WEST
+//  if (entered_x == SIZE/2 && entered_y == SIZE/2) {
+//
+//    set_wall(my_maze->map[SIZE/2 - 1][SIZE/2 - 1], NORTH);
+//    set_wall(my_maze->map[SIZE/2 - 1][SIZE/2 - 1], WEST);
+//    set_wall(my_maze->map[SIZE/2 - 1][SIZE/2],     NORTH);
+//    set_wall(my_maze->map[SIZE/2 - 1][SIZE/2],     EAST);
+//    set_wall(my_maze->map[SIZE/2][SIZE/2 - 1], SOUTH);
+//    set_wall(my_maze->map[SIZE/2][SIZE/2 - 1], WEST);
+//  }
+//
+//  // 8, 7 : NORTH or EAST
+//  if (entered_x == SIZE/2 && entered_y == SIZE/2 - 1) {
+//
+//    set_wall(my_maze->map[SIZE/2 - 1][SIZE/2 - 1], NORTH);
+//    set_wall(my_maze->map[SIZE/2 - 1][SIZE/2 - 1], WEST);
+//    set_wall(my_maze->map[SIZE/2 - 1][SIZE/2],     NORTH);
+//    set_wall(my_maze->map[SIZE/2 - 1][SIZE/2],     EAST);
+//    set_wall(my_maze->map[SIZE/2][SIZE/2], SOUTH);
+//    set_wall(my_maze->map[SIZE/2][SIZE/2], EAST);
+//  }
+//
+//  // 7, 7 : SOUTH or EAST
+//  if (entered_x == SIZE/2 - 1 && entered_y == SIZE/2 - 1) {
+//
+//    set_wall(my_maze->map[SIZE/2][SIZE/2 - 1], SOUTH);
+//    set_wall(my_maze->map[SIZE/2][SIZE/2 - 1], WEST);
+//    set_wall(my_maze->map[SIZE/2 - 1][SIZE/2],     NORTH);
+//    set_wall(my_maze->map[SIZE/2 - 1][SIZE/2],     EAST);
+//    set_wall(my_maze->map[SIZE/2][SIZE/2], SOUTH);
+//    set_wall(my_maze->map[SIZE/2][SIZE/2], EAST);
+//  }
+//
+//
+//  // 7, 8 : SOUTH or WEST
+//  if (entered_x == SIZE/2 - 1 && entered_y == SIZE/2) {
+//
+//    set_wall(my_maze->map[SIZE/2][SIZE/2 - 1], SOUTH);
+//    set_wall(my_maze->map[SIZE/2][SIZE/2 - 1], WEST);
+//    set_wall(my_maze->map[SIZE/2 - 1][SIZE/2 - 1], NORTH);
+//    set_wall(my_maze->map[SIZE/2 - 1][SIZE/2 - 1], WEST);
+//    set_wall(my_maze->map[SIZE/2][SIZE/2], SOUTH);
+//    set_wall(my_maze->map[SIZE/2][SIZE/2], EAST);
+//  }
+//
+//}
+//
+///** Function: reflood_from_goal
+//    Description: Resets all the flood values so that the goal is now the start without modifying wall values.
+//*/
+//
+//void reflood_from_goal() {
+// 
+//  for (int i = 0; i < SIZE; i++) 
+//      for (int j = 0; j < SIZE; j++)
+//        my_maze->map[i][j]->floodval = LARGEVAL;
+//      
+//    // set the start value to zero 
+//    set_value(my_maze->map[START_X][START_Y], 0);
+//
+//    /* push the neighbors of start cell to stack 
+//       then pop everything until all cells updated*/
+//    push_open_neighbors(my_maze->map[START_X][START_Y], my_stack);
+//    while(!is_empty_Stack(my_stack)) {
+//      pop(my_stack, &temp);
+//      if (!(temp->row == 15 && temp->column == 0))
+//        flood_fill(temp, my_stack, TRUE);
+//    }
+//  
+//}
 
