@@ -15,6 +15,9 @@ Pins Used:
 #include "Maze.c"
 #include "Maze.h"
 #include "Stack.c"
+#include "Sensor.h"
+#include "Drive.h"
+#include <LedDisplay.h>
 #include <avr/interrupt.h>
 //Define Driving Direction
 #define BACKWARD 0
@@ -24,10 +27,6 @@ Pins Used:
 #define led1 26
 #define led2 27
 #define led3 28
-
-//Pin definitions for motor
-const int R_fwd = 6, R_bkw = 5;  //R_fwd = 1 and R_bkw = 0 -> go forward on rightside
-const int L_fwd = 4, L_bkw = 3;  //L_fwd = 1 and L_bkw = 0 -> go forward on leftside
 
 //Sensors
 #define LF_Emitter 23        //left front emitter
@@ -45,12 +44,16 @@ const int L_fwd = 4, L_bkw = 3;  //L_fwd = 1 and L_bkw = 0 -> go forward on left
 #define RenchA 10
 #define RenchB 9
 
-
 //Speaker
 #define speakerPin 2
 
-#define ABOUT_FACE_COUNT 5000
+//LCD Display
+#define dataPin 12      //connect to displays data input
+#define registerSelect 1 //the display's register select pin
 
+
+////// What are these?
+#define ABOUT_FACE_COUNT 5000
 #define TURN_RIGHT_COUNT 2500
 #define TURN_LEFT_COUNT 2500
 
@@ -66,13 +69,14 @@ int hasRightWall = 50;
 int errorP = 0;
 int errorD = 0; 
 int oldErrorP = 0; 
-int newOffset = -80; 
+int newOffset = -80;     // what is this?
 int rightBaseSpeed = 35; 
 int leftBaseSpeed = 31;
 
 double P = 0.25; 
 double D = 0.3; 
 
+/////What are these?
  int rightenca = 0; 
  int rightencb = 0; 
  int leftenca = 0; 
@@ -85,22 +89,15 @@ double D = 0.3;
 volatile int R_encoder_val = 0;  // declare encoder interrupt values
 volatile int L_encoder_val = 0;
 
-
 const int numReadings = 500;
 
 int readings[numReadings];      // the readings from the analog input
-int smoothingIndex = 0;                  // the index of the current reading
+int smoothingIndex = 0;         // the index of the current reading
 int total = 0;                  // the running total
 int average = 0;                // the average
 
 int inputPin = A0;
 
-int leftSensor = 0; 
-int rightSensor = 0; 
-int leftSense = 0; 
-int rightSense = 0; 
-int LFSensor = 0; 
-int RFSensor =0; 
 // the setup routine runs once when you press reset:
 /**** maze solving variables ****/
 struct Maze * my_maze; //maze that keeps track of flood fill values and walls
@@ -112,41 +109,41 @@ short x, y; //current coordinates of the mouse in the maze
 short goal_x, goal_y; //goal coordinates once found
 
 
+// Sensor initializations
+Sensor sensor = Sensor(LF_Emitter, LF_Receiver, RF_Emitter, 
+        RF_Receiver, SIDE_HIGH_POWER, SIDE_LOW_POWER,
+        R_Receiver, L_Receiver);
+int leftSensor = 0; 
+int rightSensor = 0; 
+int leftSense = 0; 
+int rightSense = 0; 
+int LFSensor = 0; 
+int RFSensor = 0; 
+
+// Drive initializations
+//Pin definitions for motor
+const int R_fwd = 6, R_bkw = 5;  //R_fwd = 1 and R_bkw = 0 -> go forward on rightside
+const int L_fwd = 4, L_bkw = 3;  //L_fwd = 1 and L_bkw = 0 -> go forward on leftside
+
+Drive drive = Drive(R_fwd, R_bkw, L_fwd, L_bkw); 
+
 
 // the setup routine runs once when you press reset:
 void setup()
 {
 
   Serial.begin(9600);     //initialize for serial output
+
+  
+  // initialize left and right encoders
   pinMode(RenchA, INPUT); 
   pinMode(RenchB, INPUT);
   pinMode(LenchA, INPUT); 
   pinMode(LenchB, INPUT); 
 
-  attachInterrupt(LenchA, left_interrupt, CHANGE);  // may need to adjust encoder operation
-  attachInterrupt(LenchB, left_interrupt, CHANGE);
-  attachInterrupt(RenchA, right_interrupt, CHANGE);
-  attachInterrupt(RenchB, right_interrupt, CHANGE);  // comment out interrupts not used
-
-
-
-
-  //initialize motor pins to off
-  pinMode(R_fwd, OUTPUT);  //initialize rightmotor forward as output
-  pinMode(R_bkw, OUTPUT);
-  pinMode(L_fwd, OUTPUT);
-  pinMode(L_bkw, OUTPUT);
-
-
-
   //power for the receivers *leave as is DO NOT CHANGE*
   pinMode(A14, OUTPUT);  
   analogWrite(A14, 255);
-
-  //initialize debug LEDs
-  pinMode(led1, OUTPUT);  //setup led1 for output
-  pinMode(led2, OUTPUT);  //setup led2 for output
-  pinMode(led3, OUTPUT);  //setup led3 for output
 
   //setup sensor pins for output and input
   pinMode(LF_Emitter, OUTPUT);  //initializes leftfront emitter to output stuff
@@ -157,10 +154,27 @@ void setup()
   pinMode(L_Receiver, INPUT);
   pinMode(R_Receiver, INPUT);
 
+  attachInterrupt(LenchA, left_interrupt, CHANGE);  // may need to adjust encoder operation
+  attachInterrupt(LenchB, left_interrupt, CHANGE);
+  attachInterrupt(RenchA, right_interrupt, CHANGE);
+  attachInterrupt(RenchB, right_interrupt, CHANGE);  // comment out interrupts not used
+
+  //initialize motor pins to off
+  pinMode(R_fwd, OUTPUT);  //initialize rightmotor forward as output
+  pinMode(R_bkw, OUTPUT);
+  pinMode(L_fwd, OUTPUT);
+  pinMode(L_bkw, OUTPUT);
+
+  //initialize debug LEDs
+  pinMode(led1, OUTPUT);  //setup led1 for output
+  pinMode(led2, OUTPUT);  //setup led2 for output
+  pinMode(led3, OUTPUT);  //setup led3 for output
+
   //setup the speaker pin
   pinMode(speakerPin, OUTPUT);
   ran = 0; 
 
+  /// what are these for?
   for (int thisReading = 0; thisReading < numReadings; thisReading++)
     readings[thisReading] = 0;
   //rightForward(0); 
@@ -173,238 +187,135 @@ void setup()
   y = START_Y;
   direction = NORTH;
   found_dest = FALSE;
-
-
 }
 
 // the loop routine runs over and over again forever:
 void loop()
 {
-  //writeSides();  //turn on side emitters to receive distance signal
-
+  /*
   
-  readSensor(); 
-  //drive_straight_PID(); 
-//  pid();
-  move_single_cell();
-  printSensors();  
- 
-  //printSensors(); 
-  //readDistance(); 
-  delay(1000); 
+  */
+  //while the center destination hasn't been reached
+  while(!found_dest){
+     readSensor();                               // read sensors
+     visit_node(my_maze,my_stack,x,y,TRUE);
+     change_dir(my_maze,&x,&y,&direction);
+     move_single_cell();                        // move a single cell forward
+     check_start_reached(&x,&y,&found_dest);    // check if destination has been reached
+  }
   
+  //redo floodfill
   
+  //speed runs?
 }
- 
+
+/*Function: pid
+  Description: 
+*/
 void pid( void ) {
- 
+  int totalError;   // the total error for the wall
+//  rightSense = rightSensor; 
+//  leftSense = leftSensor; 
   
-  int totalError; 
-  rightSense = rightSensor; 
-  leftSense = leftSensor; 
-  if( leftSense > hasLeftWall && rightSense > hasRightWall ) {
+  // compare sensor readings with constants for the wall -> if true it is in the middle
+  if(leftSensor > hasLeftWall && rightSensor > hasRightWall) {
     Serial.println("in the middle"); 
-    errorP = rightSense - leftSense - newOffset;  
-    errorD = errorP - oldErrorP;  
-  } 
+    errorP = rightSense - leftSense - newOffset;  //how far away from middle we are
+    errorD = errorP - oldErrorP;                  //change in error  
+  }
+  // sensor only reads in left wall 
   else if( leftSense > hasLeftWall ){
     Serial.println("only left wall"); 
-    errorP = .1 * ( 80 - leftSense ); 
-    errorD = errorP - oldErrorP; 
+    errorP = .1 * ( 80 - leftSense );      // the error away from center with only a left wall
+    errorD = errorP - oldErrorP;           // change in error
   }
+  // sensor only reads in right wall
   else if( rightSense > hasRightWall ){
     Serial.println("only right wall"); 
-    errorP = .1 * (rightSense - 80 ); 
-    errorD = errorP - oldErrorP;  
+    errorP = .1 * (rightSense - 80 );      // the error away from center with only a right wall
+    errorD = errorP - oldErrorP;           // change in error
   }
-  //Serial.print("Error P : "); 
-  //Serial.println(errorP); 
   
-  totalError = P * errorP + D * errorD; 
-  oldErrorP = errorP; 
-  //Serial.print("P: "); 
-  //Serial.println(P); 
-  //Serial.print("Total Error: ");
-  //Serial.println(totalError); 
+  //initialize motor speeds based on error, and what we set as the base speed
   int rightSpeed = rightBaseSpeed + totalError; 
-  int leftSpeed = leftBaseSpeed - totalError; 
-  Serial.print("Right speed: "); 
-  Serial.println(rightSpeed); 
-  Serial.print("Left speed: "); 
-  Serial.println(leftSpeed); 
+  int leftSpeed = leftBaseSpeed - totalError;
   
+  // sensor reads in deadEnd -> stop mouse
+  if(RFSensor > 500 || LFSensor > 500 ){
+    rightSpeed = 0; 
+    leftSpeed = 0;  
+  }
+    
+  totalError = P * errorP + D * errorD; // total error = P + D controller type
+  oldErrorP = errorP;                   // re initialize oldError 
+//  Serial.print("Right speed: "); 
+//  Serial.println(rightSpeed); 
+//  Serial.print("Left speed: "); 
+//  Serial.println(leftSpeed); 
+  
+  //LUCAS WHAT THE FUCK IS THIS DOING?
   if( rightSpeed > 50 || rightSpeed < -50 )
     rightSpeed = rightSpeed/2 -5 ; 
   if( leftSpeed > 50 || leftSpeed < -50 )
     leftSpeed = leftSpeed/2 - 5 ; 
   
-  if(RFSensor > 500 || LFSensor > 500 ){
-    rightSpeed = 0; 
-    leftSpeed = 0;  
-  }
-  rightForward( rightSpeed ); 
-  leftForward(leftSpeed ); 
-  Serial.println("working"); 
+  // move right/left motor forward
+  drive.rightForward(rightSpeed); 
+  drive.leftForward(leftSpeed); 
   
-  
+  Serial.println("Reach end of PID....!!!"); 
 }
+
+/*Function: readSensor
+  Description: Read in left-front, right-front and the right/left sensors
+  and record the distances into the vars:
+  1. LFSensor
+  2. RFSensor
+  3. rightSensor
+  4. leftSensor
+*/
 void readSensor(void) {
-
-int curt = micros();//record the current time
-
-writeLeftFront();//this is not sudo code, this is macro I defined somewhere else
-
-while((micros()-curt)<60);//use up time until 60us from where we record curt
-
-LFSensor =readLeftFront(); 
-
-stopLeftFront();//turn off emitter right after receive   r done ADC converting
-
-//do linear regression here for left front sensor if you plan to linearize your sensor
-
-while((micros()-curt)<140);//140-60=80us,wait 80us until reflection is gone
-
-writeRightFront();
-
-while((micros()-curt)<200);//200-140=60us, turn on emitter for 60us
-
-RFSensor=readRightFront();
-
-stopRightFront(); 
-
-//do linear regression here for right front sensor if you plan to linearize your sensor
-
-while((micros()-curt)<280);//280-200=80us
-
-writeSides();//turn on side emitters for side sensors
-
-while((micros()-curt)<340);//340-280=60us
+  int curt = micros();//record the current time
   
-leftSensor  = readLeft(); 
-
-rightSensor = readRight(); 
-
-stopSides(); 
-
-//do linear regression here for side sensors if you plan to linearize your sensors
-
-}
-
-void printSensors(){
-  Serial.print("Time: "); 
-  Serial.println(micros());
-  Serial.print("IR left diag: ");
-  Serial.println(leftSensor);
-  Serial.print("IR right diag: "); 
-  Serial.println(rightSensor); 
-  Serial.print("IR left front: ");
-  Serial.println(LFSensor);
-  Serial.print("IR right front: "); 
-  Serial.println(RFSensor);
-  Serial.print("Offcenter: "); 
-  Serial.println(RFSensor - LFSensor + 100); 
-}
-void readDistance(){
- Serial.print("Right encoder: "); 
- Serial.println(R_encoder_val); 
- Serial.print("Left encoder: "); 
- Serial.println(L_encoder_val);  
+  // read in the left front sensor and then stop emitter
+  sensor.writeLeftFront();//this is not sudo code, this is macro I defined somewhere else
+  while((micros()-curt)<60); //use up time until 60us from where we record curt to read another sensor 
+  LFSensor = sensor.readLeftFront(); //read the leftFront sensor
+  sensor.stopLeftFront();//turn off emitter right after receive   r done ADC converting
   
+  // read in right front sensor and then stop emitter
+  while((micros()-curt)<140);//140-60=80us,wait 80us until reflection is gone
+  sensor.writeRightFront();
+  while((micros()-curt)<200);//200-140=60us, turn on emitter for 60us
+  RFSensor = sensor.readRightFront();
+  sensor.stopRightFront(); 
+  
+  //do linear regression here for right front sensor if you plan to linearize your sensor
+  
+  // read in side sensors and then stop emitters
+  while((micros()-curt)<280);//280-200=80us
+  sensor.writeSides();//turn on side emitters for side sensors
+  while((micros()-curt)<340);//340-280=60us 
+  leftSensor  = sensor.readLeft(); 
+  rightSensor = sensor.readRight(); 
+  sensor.stopSides(); 
 }
+
+
+
+// Shouldn't touch this.... These are encoder functions that are hardware implemented
+// to increase encoder value with every turn of the wheel
 void left_interrupt()
 {
-  
   ++L_encoder_val;
-   
-  //Serial.print("interrupt working"); 
-  
-  /*
-  if( digitalRead(LenchA) == LOW ) 
-    Serial.print("A LOW"); 
-  else
-    Serial.print("A HIGH"); 
-  if( digitalRead(LenchB) == LOW )
-    Serial.print("B LOW"); 
-  else
-    Serial.print("B HIGH"); 
-    */
 }
-
 void right_interrupt()
 {
-  //Serial.print("interrupt"); 
-   
-  ++R_encoder_val;
-  
+  ++R_encoder_val;  
 }
 
 
-
-// READ SENSORS
-int readLeft(){
-  return analogRead(L_Receiver);
-}
-int readRight(){
-  return analogRead(R_Receiver);
-}
-int readLeftFront(){
-  return analogRead(LF_Receiver);
-}
-int readRightFront(){
-  return analogRead(RF_Receiver);
-}
-// WRITE SENSORS
-void writeSides(){
-  digitalWrite(SIDE_HIGH_POWER, HIGH);
-}
-void writeSidesLow(){
-  digitalWrite(SIDE_LOW_POWER, HIGH);
-}
-void writeLeftFront(){
-  digitalWrite(LF_Emitter, HIGH);
-}
-void writeRightFront(){
-  digitalWrite(RF_Emitter, HIGH);
-}
-void stopLeftFront(){
-  digitalWrite(LF_Emitter, LOW);  
-}
-void stopRightFront(){
-  
-  digitalWrite(RF_Emitter, LOW );  
-}
-void stopSides(){
-  digitalWrite(SIDE_HIGH_POWER, LOW );  
-}
-// DRIVING Functions for left and right motor ***** Probably needs testing to set pwmvalue
-//turn left motor on or off
-void leftForward(int pwmvalue){
-  //digital write for testing/debugging
-  analogWrite(L_fwd, pwmvalue);
-  analogWrite(L_bkw, LOW);
-}
-void rightForward(int pwmvalue){
-  //digital write for testing/debugging
-  analogWrite(R_fwd, pwmvalue);
-  analogWrite(R_bkw, LOW);
-}
-void leftBackward(int pwmvalue){
-  analogWrite(L_fwd, LOW);
-  analogWrite(L_bkw, pwmvalue);
-}
-void rightBackward(int pwmvalue){
-  analogWrite(R_fwd, LOW);
-  analogWrite(R_bkw, pwmvalue);  
-}
- 
-void writeEmitters(){
-  
-  writeSides(); 
-  writeLeftFront(); 
-  writeRightFront(); 
-  
-}
-
+//This is just for debugging, **** not using....
 void readSensors(){
   Serial.print("Time: "); 
   Serial.println(time++);
@@ -564,77 +475,27 @@ void drive_test(){
   
 }
 
+void printSensors(){
+  Serial.print("Time: "); 
+  Serial.println(micros());
+  Serial.print("IR left diag: ");
+  Serial.println(leftSensor);
+  Serial.print("IR right diag: "); 
+  Serial.println(rightSensor); 
+  Serial.print("IR left front: ");
+  Serial.println(LFSensor);
+  Serial.print("IR right front: "); 
+  Serial.println(RFSensor);
+  Serial.print("Offcenter: "); 
+  Serial.println(RFSensor - LFSensor + 100); 
+}
 
-
-/**** PID TEST ****/
-/*
-void drive_straight_PID(void){
-  int offset = 80;
-  static int previous_error = 0;
-  static int previous_time = 0;
-  static int last_big = 0;
-  int error; //current error values
-  int biggest;
-  int current_time; //current time
-  double total;
-  int leftDiagSensor, rightDiagSensor;
-  double kp = 0.5, kd = 0.5;
-  leftDiagSensor = leftSensor;
-  rightDiagSensor = rightSensor;
-  //debug print out sensor readings
-  //Serial.print("IR left diag: ");
-  //Serial.print(leftDiagSensor);
-  //Serial.print(" IR right diag: ");
-  //Serial.print(rightDiagSensor);
-  
-  if(!previous_time)
-  {
-    previous_time = millis();
-    return;
-  }
-  leftDiagSensor = leftSensor;
-  rightDiagSensor = rightSensor;
-  if( 1 )//temporarily for walls on both sides only |x|
-  {
-    error = rightDiagSensor - leftDiagSensor + offset;
-  }
-  total = error *kp;
-  previous_time = current_time;
-  
-  //analogWrite(R_fwd, HIGH - total);
-  //analogWrite(L_fwd, HIGH + total);
-  //what the PID will do (because motor functions are not done)
-  if(total > 25)
-    total=0.5*total; 
-  if(total > 50 )
-    total = 0; 
-  if(total<-50)
-    total=0;
-  Serial.print("total error: "); 
-  Serial.println(total); 
-  rightForward(rightBaseSpeed+total); 
-  leftForward(leftBaseSpeed-total); 
-  
-  if( error == 0 ){
-    Serial.print(" Mouse is straight: ");
-    Serial.println(error);
-     
-  }
-  if( error > 0 ){
-    Serial.print(" Mouse is veering right: ");
-    Serial.println(error);
-    
-  }
-  if( error < 0 ){
-    Serial.print(" Mouse is veering left: ");
-    Serial.println(error);
-  }
-}//end drive_straight_PID
-*/
-
-
-
-
+void readDistance(){
+ Serial.print("Right encoder: "); 
+ Serial.println(R_encoder_val); 
+ Serial.print("Left encoder: "); 
+ Serial.println(L_encoder_val);  
+}
 
 
 /** Function: change_dir
